@@ -1,6 +1,6 @@
 get_stock_list <-
 function(stock_index){
-  
+  # APPLICATION: Pulls the names of all the stocks in the index
   tq_index(stock_index) %>% 
     select(symbol, company) %>% 
     arrange(symbol) %>% 
@@ -64,10 +64,18 @@ function(data, ggplot = TRUE){
                group = legend)) + 
     geom_line(aes(linetype = legend)) +
     theme_tq() + 
-    scale_color_tq()
+    scale_color_tq() +
+    scale_y_continuous(labels = scales::dollar_format(largest_with_cents = 10),
+                       breaks = scales::pretty_breaks()) +
+    labs(x = "",
+         y = "Adjusted Share Price (incl dividends)")
+    
   
   if(ggplot){
-  ggplotly(p)
+  ggplotly(p) %>% 
+      layout(xaxis = list(
+        rangeslider = list(type = "date")
+      ))
   }
 
   
@@ -76,12 +84,12 @@ plot_data_returns <-
 function(data, ggplot = TRUE){
   #APPLICATION: Plots returns with MA on ggplot and plotly
   p <- data %>% 
-    # mutate(returns = scales::percent(returns,
+    # mutate(label_returns = scales::percent(returns,
     #                                  accuracy = 0.01),
-    #        mavg_short = scales::percent(mavg_short,
+    #        label_mavg_short = scales::percent(mavg_short,
     #                                     accuracy = 0.01),
-    #        mavg_long = scales::percent(mavg_long,
-    #                                    accuracy = 0.01)) %>% 
+    #        label_mavg_long = scales::percent(mavg_long,
+    #                                    accuracy = 0.01)) %>%
     pivot_longer(cols = returns:mavg_long,
                  names_to = "legend",
                  names_ptypes = list(legend = factor())) %>% 
@@ -90,13 +98,49 @@ function(data, ggplot = TRUE){
                color = legend,
                group = legend)) + 
     geom_line(aes(linetype = legend)) +
-    scale_y_continuous(labels = scales::percent_format()) +
     theme_tq() + 
-    scale_color_tq()
+    scale_color_tq() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    labs(x = "",
+         y = "Adjusted Share Price (incl dividends)")
   
   if(ggplot){
-  ggplotly(p)
+    ggplotly(p) %>% 
+      layout(xaxis = list(
+        rangeslider = list(type = "date")
+      ))
   }
+  
+  
+}
+generate_commentary <-
+function(data, user_input){
+  
+  n_short <- data %>% 
+    pull(mavg_short) %>% 
+    is.na() %>% 
+    sum() + 1
+  
+  n_long <- data %>% 
+    pull(mavg_long) %>% 
+    is.na() %>% 
+    sum() + 1
+  
+  warning_signal <- data %>% 
+    tail(1) %>% 
+    mutate(mavg_warning_flag = mavg_short < mavg_long) %>% 
+    pull(mavg_warning_flag)
+  
+  if(warning_signal){
+    
+    str_glue("In reviewing the stock prices of {user_input}, the {n_short}-day moving average is below the {n_long}-day moving average, indicating a negative trend")
+  } else {
+    
+    str_glue("In reviewing the stock prices of {user_input}, the {n_short}-day moving average is above the {n_long}-day moving average, indicating a positive trend")
+    
+  }
+  
+  
   
   
 }

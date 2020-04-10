@@ -173,7 +173,10 @@ p <- stock_data_tbl %>%
   labs(x = "",
        y = "Adjusted Share Price (incl dividends)")
 
-ggplotly(p)
+ggplotly(p) %>% 
+  layout(xaxis = list(
+    rangeslider = list(type = "date")
+  ))
 
 plot_data_prices <- function(data, ggplot = TRUE){
   #APPLICATION: Plots prices with MA on ggplot and plotly
@@ -187,10 +190,18 @@ plot_data_prices <- function(data, ggplot = TRUE){
                group = legend)) + 
     geom_line(aes(linetype = legend)) +
     theme_tq() + 
-    scale_color_tq()
+    scale_color_tq() +
+    scale_y_continuous(labels = scales::dollar_format(largest_with_cents = 10),
+                       breaks = scales::pretty_breaks()) +
+    labs(x = "",
+         y = "Adjusted Share Price (incl dividends)")
+    
   
   if(ggplot){
-  ggplotly(p)
+  ggplotly(p) %>% 
+      layout(xaxis = list(
+        rangeslider = list(type = "date")
+      ))
   }
 
   
@@ -213,19 +224,81 @@ plot_data_returns <- function(data, ggplot = TRUE){
                color = legend,
                group = legend)) + 
     geom_line(aes(linetype = legend)) +
-    scale_y_continuous(labels = scales::percent_format()) +
     theme_tq() + 
-    scale_color_tq()
+    scale_color_tq() +
+    scale_y_continuous(labels = scales::percent_format()) +
+    labs(x = "",
+         y = "Adjusted Share Price (incl dividends)")
   
   if(ggplot){
-  ggplotly(p)
+    ggplotly(p) %>% 
+      layout(xaxis = list(
+        rangeslider = list(type = "date")
+      ))
   }
   
   
 }
 
+# 5.0 ANALYST COMMENTARY ----
 
-# 5.0 TEST WORKFLOW ----
+n_short <- stock_data_tbl %>% 
+  pull(mavg_short) %>% 
+  is.na() %>% 
+  sum() + 1
+
+n_long <- stock_data_tbl %>% 
+  pull(mavg_long) %>% 
+  is.na() %>% 
+  sum() + 1
+
+warning_signal <- stock_data_tbl %>% 
+  tail(1) %>% 
+  mutate(mavg_warning_flag = mavg_short < mavg_long) %>% 
+  pull(mavg_warning_flag)
+  
+if(warning_signal){
+  
+  str_glue("In reviewing the stock prices of {user_input}, the {n_short}-day moving average is below the {n_long}-day moving average, indicating a negative trend")
+} else {
+  
+  str_glue("In reviewing the stock prices of {user_input}, the {n_short}-day moving average is above the {n_long}-day moving average, indicating a positive trend")
+  
+}
+
+generate_commentary <- function(data, user_input){
+  
+  n_short <- data %>% 
+    pull(mavg_short) %>% 
+    is.na() %>% 
+    sum() + 1
+  
+  n_long <- data %>% 
+    pull(mavg_long) %>% 
+    is.na() %>% 
+    sum() + 1
+  
+  warning_signal <- data %>% 
+    tail(1) %>% 
+    mutate(mavg_warning_flag = mavg_short < mavg_long) %>% 
+    pull(mavg_warning_flag)
+  
+  if(warning_signal){
+    
+    str_glue("In reviewing the stock prices of {user_input}, the {n_short}-day moving average is below the {n_long}-day moving average, indicating a negative trend")
+  } else {
+    
+    str_glue("In reviewing the stock prices of {user_input}, the {n_short}-day moving average is above the {n_long}-day moving average, indicating a positive trend")
+    
+  }
+  
+  
+  
+  
+}
+
+
+# 6.0 TEST WORKFLOW ----
 
 user_input <- "AAPL, Apple Inc."
 end     <- today()
@@ -243,7 +316,7 @@ user_input %>%
   get_stock_returns() %>% 
   plot_data_returns()
 
-# 6.0 SAVE SCRIPTS ----
+# 7.0 SAVE SCRIPTS ----
 
 fs::dir_create(path = "00_scripts")
 dump(list = c("get_stock_list",
@@ -251,5 +324,8 @@ dump(list = c("get_stock_list",
               "get_stock_prices",
               "get_stock_returns",
               "plot_data_prices",
-              "plot_data_returns"),
+              "plot_data_returns",
+              "generate_commentary"),
     file = "00_scripts/stock_analysis_functions.R")
+
+

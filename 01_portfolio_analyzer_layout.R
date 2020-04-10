@@ -32,6 +32,7 @@ library(parsnip)
 library(xgboost)
 library(glmnet)
 
+source("00_scripts/stock_analysis_functions.R")
 
 stock_list_tbl <- get_stock_list("SP500")
 user_input <- "AAPL, Apple Inc."
@@ -62,6 +63,27 @@ ui <- fluidPage(
                            liveSearch = TRUE,
                            size = 10
                          )),
+             pickerInput(inputId = "stock_2",
+                         label = "Stock 2",
+                         choices = stock_list_tbl$label,
+                         multiple = FALSE,
+                         selected = stock_list_tbl %>% filter(label %>% str_detect("MSFT")) %>% pull(label),
+                         options = pickerOptions(
+                           actionsBox = FALSE,
+                           liveSearch = TRUE,
+                           size = 10
+                         )),
+             pickerInput(inputId = "stock_3",
+                         label = "Stock 3",
+                         choices = stock_list_tbl$label,
+                         multiple = FALSE,
+                         selected = stock_list_tbl %>% filter(label %>% str_detect("NFLX")) %>% pull(label),
+                         options = pickerOptions(
+                           actionsBox = FALSE,
+                           liveSearch = TRUE,
+                           size = 10
+                         )),
+             
              actionButton(inputId = "submit",
                           label = "Submit",
                           icon = icon("piggy-bank",
@@ -94,7 +116,16 @@ ui <- fluidPage(
   
   # 3.0 ANALYST COMMENTARY ----
   div(
-    column(width = 12)
+    column(width = 12,
+           div(
+             div(h4("Analyst Commentary")),
+             div(
+               stock_data_tbl %>% 
+                 generate_commentary(user_input = user_input)
+             )
+           )
+           
+           )
   )
 )
 

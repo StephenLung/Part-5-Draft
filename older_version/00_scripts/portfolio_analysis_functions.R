@@ -32,12 +32,6 @@ function(data, ggplot = TRUE){
     mutate(label_text = str_glue("Date: {date}
                                Investment: {scales::dollar(investment.growth)}
                                Growth %: {scales::percent(portfolio.wealthindex-1, accuracy = 0.01)}")) %>% 
-    
-    # pivot_longer(cols = investment.growth:mavg_long, names_to = "legend", values_to = "value",
-    #              names_ptypes = list(legend = factor(levels = c("investment.growth", 
-    #                                                             "mavg_short",
-    #                                                             "mavg_long")))) %>% 
-    
     ggplot(aes(date, investment.growth)) + 
     geom_point(aes(text = label_text), size = 0.1)+
     geom_line(lwd = 1.0) +

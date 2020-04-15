@@ -123,10 +123,7 @@ wealth_index <- function(return_data, wts_tbl, name_portfolio){
                    returns_col = returns,
                    wealth.index = TRUE) %>% 
       mutate(investment.growth = portfolio.wealthindex * 10000) %>% 
-      add_column(portfolio = name_portfolio, .before = 1) 
-      #added mavg 04.14.2020 ----
-      # mutate(mavg_short = rollmean(investment.growth, k = mavg_short, fill = NA, align = "right"),
-             # mavg_long = rollmean(investment.growth, k = mavg_long, fill = NA, align = "right")) 
+      add_column(portfolio = name_portfolio, .before = 1)
     
   }
   
@@ -140,9 +137,6 @@ wealth_index <- function(return_data, wts_tbl, name_portfolio){
                    wealth.index = TRUE) %>% 
       mutate(investment.growth = portfolio.wealthindex * 10000) %>% 
       add_column(portfolio = name_portfolio, .before = 1)
-      #added mavg 04.14.2020 ---- 
-      # mutate(mavg_short = rollmean(investment.growth, k = mavg_short, fill = NA, align = "right"),
-             # mavg_long = rollmean(investment.growth, k = mavg_long, fill = NA, align = "right")) 
   }
 
 }

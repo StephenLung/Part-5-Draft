@@ -70,28 +70,13 @@ portfolio_price_data %>%
 
 portfolio_data_tbl <- multi_asset_price_portfolio(symbols, end, start, wts_tbl) %>% 
   multi_asset_return_portfolio(period = "monthly") %>% 
-  wealth_index(wts_tbl = wts_tbl, name_portfolio = "test portfolio") %>% 
-  mutate(mavg_short = rollmean(investment.growth, k = 5, fill = NA, align = "right"),
-         mavg_long = rollmean(investment.growth, k = 20, fill = NA, align = "right")) 
-
-portfolio_data_tbl <- multi_asset_price_portfolio(symbols, end, start, wts_tbl) %>% 
-  multi_asset_return_portfolio(period = "monthly") %>% 
-  wealth_index(wts_tbl = wts_tbl, name_portfolio = "test portfolio", mavg_short = 20, mavg_long = 50)
+  wealth_index(wts_tbl = wts_tbl, name_portfolio = "test portfolio")
 
 p <- portfolio_data_tbl %>% 
-  
   mutate(label_text = str_glue("Date: {date}
                                Investment: {scales::dollar(investment.growth)}
-                               Growth %: {scales::percent(portfolio.wealthindex-1, accuracy = 0.01)}
-                               SMA: {scales::dollar(mavg_short)}
-                               LMA: {scales::dollar(mavg_long)}")) %>%
-
-  pivot_longer(cols = investment.growth:mavg_long, names_to = "legend", values_to = "value",
-              names_ptypes = list(legend = factor(levels = c("investment.growth", 
-                                                             "mavg_short",
-                                                             "mavg_long")))) %>% 
-
-  ggplot(aes(date, value, color = legend, group = legend)) + 
+                               Growth %: {scales::percent(portfolio.wealthindex-1, accuracy = 0.01)}")) %>% 
+  ggplot(aes(date, investment.growth)) + 
   geom_point(aes(text = label_text), size = 0.1)+
   geom_line(lwd = 1.0) +
   theme_tq() + 
@@ -112,12 +97,6 @@ plot_portfolio_index <- function(data, ggplot = TRUE){
     mutate(label_text = str_glue("Date: {date}
                                Investment: {scales::dollar(investment.growth)}
                                Growth %: {scales::percent(portfolio.wealthindex-1, accuracy = 0.01)}")) %>% 
-    
-    # pivot_longer(cols = investment.growth:mavg_long, names_to = "legend", values_to = "value",
-    #              names_ptypes = list(legend = factor(levels = c("investment.growth", 
-    #                                                             "mavg_short",
-    #                                                             "mavg_long")))) %>% 
-    
     ggplot(aes(date, investment.growth)) + 
     geom_point(aes(text = label_text), size = 0.1)+
     geom_line(lwd = 1.0) +
@@ -141,10 +120,6 @@ plot_portfolio_index <- function(data, ggplot = TRUE){
 
 portfolio_data_tbl %>% 
   plot_portfolio_index()
-
-# 3.0 PORTFOLIO COMMENTARY ----
-
-portfolio_data_tbl
 
 # 7.0 SAVE SCRIPTS ----
 

@@ -48,7 +48,7 @@ ui <- fluidPage(
     p("This is the beta testing of portfolio analytics project in Shiny")
   ),
   
-  # 2.2 TEST PANEL----
+  # 2.0 THREE WELL PANEL APPLICATION UI ----
   div(
     div(
       class = "col-sm-4",
@@ -160,7 +160,7 @@ ui <- fluidPage(
                  div(
                    div(h4("Stock Returns of selected is....")),
                    div(
-                     plotlyOutput(outputId = "portfolio_index_data_tbl")
+                     plotlyOutput(outputId = "portfolio_index_mavg_data_tbl")
 
                      # portfolio_return_data_tbl %>%
                      #   plot_portfolio_index()
@@ -170,116 +170,6 @@ ui <- fluidPage(
     
     
   ),
-
-  
-  
-  # 2.1 TWO WELL PANEL APPLICATION UI ----
-  # div(
-  #   fluidRow(
-  #     column(width = 2, 
-  #            wellPanel(
-  #              pickerInput(inputId = "stock_1",
-  #                          label = h5("Stock 1"),
-  #                          choices = stock_list_tbl$label,
-  #                          multiple = FALSE,
-  #                          selected = stock_list_tbl %>% filter(label %>% str_detect("AAPL")) %>% pull(label),
-  #                          options = pickerOptions(
-  #                            actionsBox = FALSE,
-  #                            liveSearch = TRUE,
-  #                            size = 10
-  #                          )),
-  #              pickerInput(inputId = "stock_2",
-  #                          label = h5("Stock 2"),
-  #                          choices = stock_list_tbl$label,
-  #                          multiple = FALSE,
-  #                          selected = stock_list_tbl %>% filter(label %>% str_detect("MSFT")) %>% pull(label),
-  #                          options = pickerOptions(
-  #                            actionsBox = FALSE,
-  #                            liveSearch = TRUE,
-  #                            size = 10
-  #                          )),
-  #              pickerInput(inputId = "stock_3",
-  #                          label = h5("Stock 3"),
-  #                          choices = stock_list_tbl$label,
-  #                          multiple = FALSE,
-  #                          selected = stock_list_tbl %>% filter(label %>% str_detect("NFLX")) %>% pull(label),
-  #                          options = pickerOptions(
-  #                            actionsBox = FALSE,
-  #                            liveSearch = TRUE,
-  #                            size = 10
-  #                          )),
-  #              pickerInput(inputId = "stock_4",
-  #                          label = h5("Stock 4"),
-  #                          choices = stock_list_tbl$label,
-  #                          multiple = FALSE,
-  #                          selected = stock_list_tbl %>% filter(label %>% str_detect("AMZN")) %>% pull(label),
-  #                          options = pickerOptions(
-  #                            actionsBox = FALSE,
-  #                            liveSearch = TRUE,
-  #                            size = 10
-  #                          )),
-  #              dateInput("start_date",
-  #                        h4("Starting Date"),
-  #                        "2006-02-01",
-  #                        format = "yyyy-mm-dd"),
-  #              dateInput("end_date",
-  #                        h4("End Date"),
-  #                        today(),
-  #                        format = "yyyy-mm-dd"),
-  #              actionButton(inputId = "submit",
-  #                           label = "Submit",
-  #                           icon = icon("piggy-bank",
-  #                                       lib = "font-awesome")),
-  #              actionButton(inputId = "reset",
-  #                           label = "Reset",
-  #                           icon = icon("sync", 
-  #                                       lib = "font-awesome")),
-  #              hr(),
-  #              sliderInput(inputId = "mavg_short", label = "Short Moving Average", 
-  #                          min = 5, max = 40, value = 20),
-  #              
-  #              sliderInput(inputId = "mavg_long", label = "Long Moving Average", 
-  #                          min = 50, max = 120, value = 50)    
-  # 
-  #            )
-  #            
-  #            
-  #            ),
-  #     column(width = 2, 
-  #            wellPanel(
-  #              numericInput("w1", h5("Portf. %"), 25,
-  #                           min = 1, max = 100),
-  #              
-  #              numericInput("w2", h5("Portf. %"), 25,
-  #                           min = 1, max = 100),
-  #              
-  #              numericInput("w3", h5("Portf. %"), 25,
-  #                           min = 1, max = 100),
-  #              
-  #              numericInput("w4", h5("Portf. %"), 25,
-  #                           min = 1, max = 100),
-  #              
-  #            )),
-  #     column(width = 8,
-  #            div(
-  #              div(h4("Stock Selected is...")),
-  #              div(
-  #                # tableOutput(outputId = "portfolio_price_data_tbl"),
-  #                plotlyOutput(outputId = "portfolio_price_data_tbl")
-  # 
-  #              )
-  #            ),
-  #            div(
-  #              div(h4("Stock Returns of selected is....")),
-  #              div(
-  #                plotlyOutput(outputId = "portfolio_index_data_tbl")
-  #                
-  #                # portfolio_return_data_tbl %>% 
-  #                #   plot_portfolio_index()
-  #              )
-  #            ))
-  #   )
-  # ),
   
   # 3.0 PORTFOLIO COMMENTARY ----
   div(
@@ -355,25 +245,26 @@ server <- function(input, output, session){
                                 wts_tbl = wts_tbl()) %>%
       multi_asset_return_portfolio(period = "monthly") %>%
       wealth_index(wts_tbl = wts_tbl(), name_portfolio = "test portfolio"
-                  # mavg changes ----
-                  # mavg_short = input$mavg_short,
-                  # mavg_long = input$mavg_long
                   ) %>%
       plot_portfolio_index()
   })
   output$portfolio_index_data_tbl <- renderPlotly(portfolio_index_data_tbl())
+  
+  # Portfolio investment index with MAVG plot ----
+  portfolio_index_mavg_data_tbl <- reactive({
+    multi_asset_price_portfolio(symbols = symbols(),
+                                end = end(),
+                                start = start(),
+                                wts_tbl = wts_tbl()) %>%
+      multi_asset_return_portfolio(period = "monthly") %>%
+      wealth_index(wts_tbl = wts_tbl(), name_portfolio = "test portfolio") %>%
+      plot_portfolio_index_mavg(mavg_short = input$mavg_short, 
+                                mavg_long = input$mavg_long)
+    
+    
+  })
+  output$portfolio_index_mavg_data_tbl <- renderPlotly(portfolio_index_mavg_data_tbl())
 
-  # portfolio_index_data_tbl <- reactive({
-  #   multi_asset_price_portfolio(symbols = symbols(),
-  #                               end = end(),
-  #                               start = start(),
-  #                               wts_tbl = wts_tbl()) %>%
-  #     multi_asset_return_portfolio(period = "monthly") %>%
-  #     wealth_index(wts_tbl = wts_tbl(), name_portfolio = "test portfolio",
-  #                  mavg_short = input$mavg_short,
-  #                  mavg_long = input$mavg_long)
-  # })
-  # output$portfolio_index_data_tbl <- renderTable(portfolio_index_data_tbl())
   
 }
 

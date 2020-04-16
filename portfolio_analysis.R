@@ -142,6 +142,51 @@ plot_portfolio_index <- function(data, ggplot = TRUE){
 portfolio_data_tbl %>% 
   plot_portfolio_index()
 
+# 2.1 PORTFOLIO DATA WITH MAVG ----
+
+plot_portfolio_index_mavg <- function(data, mavg_short = 20,
+                                      mavg_long = 50, ggplot = TRUE){
+  
+  p <- data %>%
+
+    mutate(mavg_short = rollmean(investment.growth, k = mavg_short, fill = NA, align = "right"),
+    mavg_long = rollmean(investment.growth, k = mavg_long, fill = NA, align = "right")) %>% 
+    mutate(label_text = str_glue("Date: {date}
+                               Investment: {scales::dollar(investment.growth)}
+                               Growth %: {scales::percent(portfolio.wealthindex-1, accuracy = 0.01)}
+                               SMA: {scales::dollar(mavg_short)}
+                               LMA: {scales::dollar(mavg_long)}")) %>% 
+    pivot_longer(cols = investment.growth:mavg_long, names_to = "legend", values_to = "value",
+                 names_ptypes = list(legend = factor(levels = c("investment.growth",
+                                                                "mavg_short",
+                                                                "mavg_long")))) %>% 
+    ggplot(aes(date, value, color = legend, group = legend)) +
+    geom_point(aes(text = label_text), size = 0.1) + 
+    geom_line(lwd = 1) + 
+    theme_tq() + 
+    theme(legend.position = "right") +
+    scale_color_tq() +
+    scale_y_continuous(labels = scales::dollar_format(largest_with_cents = 10),
+                       breaks = scales::pretty_breaks()) + 
+    labs(title = str_glue("Portfolio Growth"),
+         x = "",
+         y = "Adjusted Portfolio Value (incl dividends)")
+  
+  if(ggplot){
+    ggplotly(p, tooltip = "text") %>% 
+      layout(xaxis = list(
+        rangeslider = list(type = "date")
+      ))
+  }
+    
+  
+}
+
+multi_asset_price_portfolio(symbols, end, start, wts_tbl) %>% 
+  multi_asset_return_portfolio(period = "monthly") %>% 
+  wealth_index(wts_tbl = wts_tbl, name_portfolio = "test portfolio") %>% 
+  plot_portfolio_index_mavg()
+
 # 3.0 PORTFOLIO COMMENTARY ----
 
 portfolio_data_tbl
@@ -149,6 +194,7 @@ portfolio_data_tbl
 # 7.0 SAVE SCRIPTS ----
 
 dump(list = c("plot_portfolio_price",
-              "plot_portfolio_index"),
+              "plot_portfolio_index",
+              "plot_portfolio_index_mavg"),
      file = "00_scripts/portfolio_analysis_functions.R")
 

@@ -258,8 +258,9 @@ server <- function(input, output, session){
                                 wts_tbl = wts_tbl()) %>%
       multi_asset_return_portfolio(period = "monthly") %>%
       wealth_index(wts_tbl = wts_tbl(), name_portfolio = "test portfolio") %>%
-      plot_portfolio_index_mavg(mavg_short = input$mavg_short, 
-                                mavg_long = input$mavg_long)
+      mavg_calculation(mavg_short = input$mavg_short, 
+                       mavg_long = input$mavg_long) %>% 
+      plot_portfolio_index_mavg()
     
     
   })

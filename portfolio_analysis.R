@@ -144,13 +144,21 @@ portfolio_data_tbl %>%
 
 # 2.1 PORTFOLIO DATA WITH MAVG ----
 
-plot_portfolio_index_mavg <- function(data, mavg_short = 20,
-                                      mavg_long = 50, ggplot = TRUE){
+mavg_calculation <- function(data, mavg_short = 20,
+                             mavg_long = 50){
+  
+  data %>% 
+    mutate(mavg_short = rollmean(investment.growth, k = mavg_short, fill = NA, align = "right"),
+           mavg_long = rollmean(investment.growth, k = mavg_long, fill = NA, align = "right"))
+  
+}
+
+plot_portfolio_index_mavg <- function(data, ggplot = TRUE){
   
   p <- data %>%
 
-    mutate(mavg_short = rollmean(investment.growth, k = mavg_short, fill = NA, align = "right"),
-    mavg_long = rollmean(investment.growth, k = mavg_long, fill = NA, align = "right")) %>% 
+    # mutate(mavg_short = rollmean(investment.growth, k = mavg_short, fill = NA, align = "right"),
+    # mavg_long = rollmean(investment.growth, k = mavg_long, fill = NA, align = "right")) %>% 
     mutate(label_text = str_glue("Date: {date}
                                Investment: {scales::dollar(investment.growth)}
                                Growth %: {scales::percent(portfolio.wealthindex-1, accuracy = 0.01)}
@@ -185,6 +193,7 @@ plot_portfolio_index_mavg <- function(data, mavg_short = 20,
 multi_asset_price_portfolio(symbols, end, start, wts_tbl) %>% 
   multi_asset_return_portfolio(period = "monthly") %>% 
   wealth_index(wts_tbl = wts_tbl, name_portfolio = "test portfolio") %>% 
+  mavg_calculation() %>% 
   plot_portfolio_index_mavg()
 
 # 3.0 PORTFOLIO COMMENTARY ----
@@ -195,6 +204,7 @@ portfolio_data_tbl
 
 dump(list = c("plot_portfolio_price",
               "plot_portfolio_index",
+              "mavg_calculation", 
               "plot_portfolio_index_mavg"),
      file = "00_scripts/portfolio_analysis_functions.R")
 

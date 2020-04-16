@@ -177,6 +177,7 @@ ui <- fluidPage(
            div(
              div(h4("Analyst Commentary")),
              div(
+               textOutput(outputId = "portfolio_commentary")
                # stock_data_tbl %>% 
                #   generate_commentary(user_input = user_input)
              )
@@ -267,7 +268,10 @@ server <- function(input, output, session){
   output$portfolio_index_mavg_data_tbl <- renderPlotly(portfolio_index_mavg_data_tbl())
   
   # Generate Commentary ----
-  
+  output$portfolio_commentary <- renderText(
+    portfolio_data_mavg_tbl() %>% 
+      generate_portfolio_commentary()
+  )
 
 }
 

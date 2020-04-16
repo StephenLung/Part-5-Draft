@@ -243,9 +243,9 @@ generate_portfolio_commentary <- function(data){
     pull(flag)
   
   if(warning_flag){
-    str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is above the {long_window}-day moving average, this indicates a positive trend")
+    str_glue("In reviewing the portfolio, since the {short_window}-day moving average is above the {long_window}-day moving average, this indicates a positive trend")
   } else {
-    str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is below the {long_window}-day moving average, this indicates a positive trend")
+    str_glue("In reviewing the portfolio, since the {short_window}-day moving average is below the {long_window}-day moving average, this indicates a positive trend")
   }
   
   

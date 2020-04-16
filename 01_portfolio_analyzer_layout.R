@@ -237,21 +237,8 @@ server <- function(input, output, session){
   })
   output$portfolio_price_data_tbl <- renderPlotly(portfolio_price_data_tbl())
   
-  # Portfolio investment index Plot ----
-  portfolio_index_data_tbl <- reactive({
-    multi_asset_price_portfolio(symbols = symbols(),
-                                end = end(),
-                                start = start(),
-                                wts_tbl = wts_tbl()) %>%
-      multi_asset_return_portfolio(period = "monthly") %>%
-      wealth_index(wts_tbl = wts_tbl(), name_portfolio = "test portfolio"
-                  ) %>%
-      plot_portfolio_index()
-  })
-  output$portfolio_index_data_tbl <- renderPlotly(portfolio_index_data_tbl())
-  
-  # Portfolio investment index with MAVG plot ----
-  portfolio_index_mavg_data_tbl <- reactive({
+  # Portfolio data tbl
+  portfolio_data_mavg_tbl <- reactive({
     multi_asset_price_portfolio(symbols = symbols(),
                                 end = end(),
                                 start = start(),
@@ -259,14 +246,29 @@ server <- function(input, output, session){
       multi_asset_return_portfolio(period = "monthly") %>%
       wealth_index(wts_tbl = wts_tbl(), name_portfolio = "test portfolio") %>%
       mavg_calculation(mavg_short = input$mavg_short, 
-                       mavg_long = input$mavg_long) %>% 
+                       mavg_long = input$mavg_long)
+    
+  })
+  
+  # Portfolio investment index Plot ----
+  portfolio_index_data_tbl <- reactive({
+    portfolio_data_mavg_tbl()  %>%
+      plot_portfolio_index()
+  })
+  output$portfolio_index_data_tbl <- renderPlotly(portfolio_index_data_tbl())
+  
+  # Portfolio investment index with MAVG plot ----
+  portfolio_index_mavg_data_tbl <- reactive({
+    portfolio_data_mavg_tbl()  %>% 
       plot_portfolio_index_mavg()
     
     
   })
   output$portfolio_index_mavg_data_tbl <- renderPlotly(portfolio_index_mavg_data_tbl())
-
   
+  # Generate Commentary ----
+  
+
 }
 
 

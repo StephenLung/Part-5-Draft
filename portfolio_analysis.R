@@ -198,13 +198,65 @@ multi_asset_price_portfolio(symbols, end, start, wts_tbl) %>%
 
 # 3.0 PORTFOLIO COMMENTARY ----
 
-portfolio_data_tbl
+portfolio_data_mavg_tbl <- multi_asset_price_portfolio(symbols, end, start, wts_tbl) %>% 
+  multi_asset_return_portfolio(period = "monthly") %>% 
+  wealth_index(wts_tbl = wts_tbl, name_portfolio = "test portfolio") %>% 
+  mavg_calculation()
+
+short_window <- portfolio_data_mavg_tbl %>% 
+  pull(mavg_short) %>% 
+  is.na() %>% 
+  sum() + 1
+
+long_window <- portfolio_data_mavg_tbl %>% 
+  pull(mavg_long) %>% 
+  is.na() %>% 
+  sum() + 1
+
+warning_flag <- portfolio_data_mavg_tbl %>% 
+  tail(1) %>% 
+  mutate(flag = mavg_short > mavg_long) %>% 
+  pull(flag)
+
+if(warning_flag){
+  str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is above the {long_window}-day moving average, this indicates a positive trend")
+} else {
+  str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is below the {long_window}-day moving average, this indicates a positive trend")
+}
+
+
+generate_portfolio_commentary <- function(data){
+  
+  short_window <- data %>% 
+    pull(mavg_short) %>% 
+    is.na() %>% 
+    sum() + 1
+  
+  long_window <- data %>% 
+    pull(mavg_long) %>% 
+    is.na() %>% 
+    sum() + 1
+  
+  warning_flag <- data %>% 
+    tail(1) %>% 
+    mutate(flag = mavg_short > mavg_long) %>% 
+    pull(flag)
+  
+  if(warning_flag){
+    str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is above the {long_window}-day moving average, this indicates a positive trend")
+  } else {
+    str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is below the {long_window}-day moving average, this indicates a positive trend")
+  }
+  
+  
+}
 
 # 7.0 SAVE SCRIPTS ----
 
 dump(list = c("plot_portfolio_price",
               "plot_portfolio_index",
               "mavg_calculation", 
-              "plot_portfolio_index_mavg"),
+              "plot_portfolio_index_mavg",
+              "generate_portfolio_commentary"),
      file = "00_scripts/portfolio_analysis_functions.R")
 

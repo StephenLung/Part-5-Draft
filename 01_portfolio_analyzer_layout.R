@@ -42,6 +42,119 @@ source("00_prior_script/wealth_index.R")
 ui <- fluidPage(
   title = "Portfolio Analytics Prediction App",
   
+  # THUMBNAILS ----
+  div(
+    class = "container",
+    id = "home-page",
+    # HEADER ----
+    h1(class = "page-header",
+       "Portfolio Analytics Prediction App",
+       tags$small("In Shiny")),
+    p(class = "lead",
+      "Learning to build a portfolio analytics app for friends and family",
+      code("in Shiny"))
+  ),
+  
+  # 1.0 THUMBNAILS ----
+  h2("Welcome to the App"),
+  fluidRow(
+    column(
+      width = 4,
+      div(
+        class = "thumbnail text-center",
+        img(class = "thumbnail img-responsive",
+            src = "stock-2.jpg"),
+        h3("Stock Analysis"),
+        p("Placeholder"),
+        a(class = "btn btn-primary btn-md", href = "#", "Learn More")
+      )
+           ),
+    column(
+      width = 4,
+      div(
+        class = "thumbnail text-center",
+        img(class = "thumbnail img-responsive",
+            src = "portfolio-2.jpg"),
+        h3("Portfolio Analysis"),
+        p("Placeholder"),
+        a(class = "btn btn-success btn-md", href = "#", "Learn More")
+      )
+    ),
+    column(
+      width = 4,
+      div(
+        class = "thumbnail text-center",
+        img(class = "thumbnail img-responsive",
+            src = "stephen-pic.jpg"),
+        h3("About the author"),
+        p("Placeholder"),
+        a(class = "btn btn-danger btn-md", href = "#", "Learn More")
+      )
+    )
+  ),
+  
+  # 2.0 NAVBAR ----
+  h2("Navigation Bar"),
+  navbarPage(
+    title = "Portfolio Analytics App",
+    inverse = TRUE,
+    collapsible = TRUE,
+    tabPanel(
+      title = "Stock Analysis",
+      value = "page_1",
+      h1("Placeholder"),
+      p("Placeholder")
+    ),
+    tabPanel(
+      title = "Portfolio Analysis",
+      value = "page_2",
+      h1("Placeholder"),
+      p("Placeholder")
+    ),
+    tabPanel(
+      title = "About the Author",
+      value = "page_3",
+      h1("Placeholder"),
+      p("Placeholder")
+    ),
+    navbarMenu(
+      title = "Resources",
+      tabPanel(
+        title = "BSU"
+      ),
+      tabPanel(
+        title = "Reproducible Finance"
+      ),
+      "----",
+      tabPanel(
+        title = "Author's Linkedin",
+        value = "page_10",
+        h1("Linkin"),
+        div(
+          shiny::actionButton(
+            inputId = "btn_1",
+            label = "Author's Linkedin Profile - Click Me",
+            class = "btn btn-primary btn-lg",
+            icon = icon(name = "linkedin-in",
+                        lib = "font-awesome"),
+            onclick ="window.open('https://www.linkedin.com/in/stephenlung/', '_blank')"
+            
+          )
+        )
+      )
+    )
+  ),
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   # 1.0 HEADER ----
   div(
     h1("Portfolio Analytics Prediction App"),

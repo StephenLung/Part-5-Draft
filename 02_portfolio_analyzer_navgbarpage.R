@@ -50,8 +50,15 @@ ui <- navbarPage(
   tabPanel(
     title = "Home",
     value = "Home",
+    
     #CSS to change contextual themes
     shinythemes::themeSelector(),
+    tags$head(
+      tags$link(rel = "stylesheet",
+                type = "text/css",
+                href = "styles.css")
+    ),
+    
     
     # THUMBNAILS ----
     div(
@@ -69,7 +76,7 @@ ui <- navbarPage(
         code("in Shiny")),
       ),
       
-      # 1.0 THUMBNAILS ----
+  # 1.0 THUMBNAILS ----
       div(
         class = "container",
         id = "selection_screen",
@@ -129,14 +136,16 @@ ui <- navbarPage(
     value = "page_1",
     id = "section_1",
     title = "Stock Analysis",
-
     
     # 2.1 HEADER ----
     div(
       class = "container",
       id = "page_1_header",
-      h1("Portfolio Analytics Prediction App"),
-      p("This is the beta testing of portfolio analytics project in Shiny")
+      h1(class = "page-header",
+         "Portfolio Analytics Prediction App",
+         tags$small("In Shiny")),
+      p(class = "lead", "This is the beta version of my first portfolio analytics project in Shiny"),
+      p(tags$strong("Stock List (Pick Between One to Five Stocks to Analyze Portfolio)"))
     ),
     
     # 2.2 THREE WELL PANEL APPLICATION UI ----
@@ -149,7 +158,7 @@ ui <- navbarPage(
           column(
             id = "1",
             class = "well",
-            width = 6,
+            width = 8,
             pickerInput(inputId = "stock_1",
                         label = h5("Stock 1"),
                         choices = stock_list_tbl$label,
@@ -195,23 +204,48 @@ ui <- navbarPage(
           column(
             id = "2",
             class = "well",
-            width = 6,
-            numericInput("w1", h5("Portf. %"), 25,
+            width = 4,
+            numericInput("w1", h5("    %"), 25,
                          min = 1, max = 100),
             
-            numericInput("w2", h5("Portf. %"), 25,
+            numericInput("w2", h5("   %"), 25,
                          min = 1, max = 100),
             
-            numericInput("w3", h5("Portf. %"), 25,
+            numericInput("w3", h5("   %"), 25,
                          min = 1, max = 100),
             
-            numericInput("w4", h5("Portf. %"), 25,
+            numericInput("w4", h5("   %"), 25,
                          min = 1, max = 100)
+          ),
+        ),
+        fluidRow(
+          column(
+            id = "input_buttons",
+            class = "well",
+            width = 12,
+            div(
+              id = "input_buttons",
+              actionButton(inputId = "submit",
+                           label = "Submit",
+                           icon = icon("piggy-bank",
+                                       lib = "font-awesome")),
+              actionButton(inputId = "reset",
+                           label = "Reset",
+                           icon = icon("sync", 
+                                       lib = "font-awesome")),
+              div(
+                class = "pull-right",
+                actionButton(inputId = "settings_toggle",
+                             label = NULL,
+                             icon = icon("cog", 
+                                         lib = "font-awesome"))
+              )
+            )
           )
         ),
         fluidRow(
           column(
-            id = "3",
+            id = "input_settings",
             class = "well",
             width = 12,
             dateInput("start_date",
@@ -222,14 +256,6 @@ ui <- navbarPage(
                       h4("End Date"),
                       today(),
                       format = "yyyy-mm-dd"),
-            actionButton(inputId = "submit",
-                         label = "Submit",
-                         icon = icon("piggy-bank",
-                                     lib = "font-awesome")),
-            actionButton(inputId = "reset",
-                         label = "Reset",
-                         icon = icon("sync", 
-                                     lib = "font-awesome")),
             hr(),
             sliderInput(inputId = "mavg_short", label = "Short Moving Average", 
                         min = 5, max = 40, value = 20),
@@ -243,9 +269,12 @@ ui <- navbarPage(
       div(
         class = "col-sm-8",
         div(
-          div(h4("Stock Selected is...")),
+          class = "panel",
           div(
-
+            class = "panel-header",
+            h4("Stock Selected is...")),
+          div(
+            class = "panel-body",
             # plotlyOutput(outputId = "portfolio_price_data_tbl")
             
           )
@@ -396,7 +425,7 @@ ui <- navbarPage(
 # SERVER ----
 server <- function(input, output, session){
   
-  # Button selection to open tabl ----
+  # Button selection to open tabpanel ----
   # Select Stock Analysis
   observeEvent(eventExpr = input$action_section_1,{
     updateNavbarPage(session, "inNavset", selected = "page_1")

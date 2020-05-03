@@ -71,6 +71,9 @@ get_symbol_from_user_input <- function(user_input){
     pluck(1,1)
   }
 
+get_symbol_from_user_input(symbol_vector)
+
+str_glue("Portfolio built from {get_symbol_from_user_input(symbol_vector)}")
 
 # 3.0 GET STOCK DATA ----
 

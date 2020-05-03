@@ -1,6 +1,6 @@
 # LIBRARIES ----
 
-# setwd("C:/Users/steph/Dropbox/Business University Science/Personal Portfolio/WIP/All_Seasons_Fund_WIP")
+# setwd("C:/Users/steph/Dropbox/Business University Science/Personal Portfolio/Part-5-Draft")
 library(flexdashboard)
 library(pacman)
 
@@ -37,6 +37,7 @@ library(glmnet)
 source("00_scripts/stock_analysis_functions.R")
 source("00_scripts/portfolio_analysis_functions.R")
 source("00_prior_script/wealth_index.R")
+source("00_scripts/info_card.R")
 
 
 # UI ----
@@ -46,6 +47,8 @@ ui <- navbarPage(
   collapsible = TRUE,
   theme = shinytheme("darkly"),
   id = "inNavset",
+  
+  
   
   tabPanel(
     title = "Home",
@@ -58,6 +61,9 @@ ui <- navbarPage(
                 type = "text/css",
                 href = "styles.css")
     ),
+    
+    # JS ----
+    shinyjs::useShinyjs(),
     
     
     # THUMBNAILS ----
@@ -148,7 +154,60 @@ ui <- navbarPage(
       p(tags$strong("Stock List (Pick Between One to Five Stocks to Analyze Portfolio)"))
     ),
     
-    # 2.2 THREE WELL PANEL APPLICATION UI ----
+    # 2.2 FAVOURITES ----
+    div(
+      class = "container hidden-sm hidden-xs",
+      id = "favourite_container",
+      
+      div(
+        class = "container",
+        column(
+          width = 12,
+          h5("Favourites")
+        )
+      ),
+      div(
+        class = "container",
+        id = "favourite_cards",
+        column(
+          width = 3,
+          info_card(
+            title = "AAPL",
+            value = p("20-Day", tags$small("vs 50-Day")),
+            sub_value = "20%"
+          )
+        ),
+        column(
+          width = 3,
+          info_card(
+            title = "MSFT",
+            value = p("20-Day", tags$small("vs 50-Day")),
+            sub_value = "-23%",
+            sub_text_color = "danger"
+          )
+        ),
+        column(
+          width = 3,
+          info_card(
+            title = "NFLX",
+            value = p("20-Day", tags$small("vs 50-Day")),
+            sub_value = "15%"
+          )
+        ),
+        column(
+          width = 3,
+          info_card(
+            title = "AMZN",
+            value = p("20-Day", tags$small("vs 50-Day")),
+            sub_value = "12%"
+          )
+        )
+      )
+    ),
+    
+    
+    
+    # 2.3 THREE WELL PANEL APPLICATION UI ----
     div(
       class = "container",
       id = "application_ui",
@@ -220,7 +279,6 @@ ui <- navbarPage(
         ),
         fluidRow(
           column(
-            id = "input_buttons",
             class = "well",
             width = 12,
             div(
@@ -245,25 +303,27 @@ ui <- navbarPage(
         ),
         fluidRow(
           column(
-            id = "input_settings",
             class = "well",
             width = 12,
-            dateInput("start_date",
-                      h4("Starting Date"),
-                      "2006-02-01",
-                      format = "yyyy-mm-dd"),
-            dateInput("end_date",
-                      h4("End Date"),
-                      today(),
-                      format = "yyyy-mm-dd"),
-            hr(),
-            sliderInput(inputId = "mavg_short", label = "Short Moving Average", 
-                        min = 5, max = 40, value = 20),
-            
-            sliderInput(inputId = "mavg_long", label = "Long Moving Average", 
-                        min = 50, max = 120, value = 50)    
-            
-          )
+            div(
+              id = "input_settings",
+              dateInput("start_date",
+                        h4("Starting Date"),
+                        "2006-02-01",
+                        format = "yyyy-mm-dd"),
+              dateInput("end_date",
+                        h4("End Date"),
+                        today(),
+                        format = "yyyy-mm-dd"),
+              hr(),
+              sliderInput(inputId = "mavg_short", label = "Short Moving Average", 
+                          min = 5, max = 40, value = 20),
+              
+              sliderInput(inputId = "mavg_long", label = "Long Moving Average", 
+                          min = 50, max = 120, value = 50) 
+              
+            )%>% shinyjs::hidden()
+          )  
         )
       ),
       div(
@@ -272,17 +332,20 @@ ui <- navbarPage(
           class = "panel",
           div(
             class = "panel-header",
-            h4("Stock Selected is...")),
+            h4(textOutput(outputId = "plot_header"))),
           div(
             class = "panel-body",
-            # plotlyOutput(outputId = "portfolio_price_data_tbl")
+            plotlyOutput(outputId = "portfolio_price_data_tbl")
             
           )
         ),
         div(
-          div(h4("Stock Returns of selected is....")),
+          class = "panel",
           div(
-            # plotlyOutput(outputId = "portfolio_index_mavg_data_tbl")
+            class = "panel-header",
+            h4(textOutput(outputId = "plot_header_2"))),
+          div(
+            plotlyOutput(outputId = "portfolio_index_mavg_data_tbl")
 
           )
         )
@@ -291,19 +354,22 @@ ui <- navbarPage(
       
     ),
     
-    # 2.3 PORTFOLIO COMMENTARY ----
+    # 2.4 PORTFOLIO COMMENTARY ----
     div(
       class = "container",
       id = "commentary",
-      column(width = 12,
-             div(
-               div(h4("Analyst Commentary")),
-               div(
-                 textOutput(outputId = "portfolio_commentary")
-                 # stock_data_tbl %>% 
-                 #   generate_commentary(user_input = user_input)
-               )
-             )
+      column(
+        width = 12,
+        class = "panel",
+         div(
+           class = "panel-header",
+           h4("Analyst Commentary")),
+         div(
+           class = "panel-body",
+           textOutput(outputId = "portfolio_commentary")
+           # stock_data_tbl %>% 
+           #   generate_commentary(user_input = user_input)
+         )
       )
     )
     
@@ -359,71 +425,15 @@ ui <- navbarPage(
   
 # 
 #   
-#   # 2.0 NAVBAR ----
-#   h2("Navigation Bar"),
-#   navbarPage(
-#     title = "Portfolio Analytics App",
-#     inverse = TRUE,
-#     collapsible = TRUE,
-#     tabPanel(
-#       title = "Stock Analysis",
-#       value = "page_1",
-#       h1("Placeholder"),
-#       p("Placeholder")
-#     ),
-#     tabPanel(
-#       title = "Portfolio Analysis",
-#       value = "page_2",
-#       h1("Placeholder"),
-#       p("Placeholder")
-#     ),
-#     tabPanel(
-#       title = "About the Author",
-#       value = "page_3",
-#       h1("Placeholder"),
-#       p("Placeholder")
-#     ),
-#     navbarMenu(
-#       title = "Resources",
-#       tabPanel(
-#         title = "BSU"
-#       ),
-#       tabPanel(
-#         title = "Reproducible Finance"
-#       ),
-#       "----",
-#       tabPanel(
-#         title = "Author's Linkedin",
-#         value = "page_10",
-#         h1("Linkin"),
-#         div(
-#           shiny::actionButton(
-#             inputId = "btn_1",
-#             label = "Author's Linkedin Profile - Click Me",
-#             class = "btn btn-primary btn-lg",
-#             icon = icon(name = "linkedin-in",
-#                         lib = "font-awesome"),
-#             onclick ="window.open('https://www.linkedin.com/in/stephenlung/', '_blank')"
-#             
-#           )
-#         )
-#       )
-#     )
-#   ),
-# 
-#   
-#   
-#   
-#   
-#   
-  
-  
-  
-  
 )
 
 # SERVER ----
 server <- function(input, output, session){
+  
+  # Toggle to unhide/hide settings ----
+  observeEvent(input$settings_toggle, {
+    shinyjs::toggle(id = "input_settings", anim = TRUE)
+  })
   
   # Button selection to open tabpanel ----
   # Select Stock Analysis
@@ -478,6 +488,18 @@ server <- function(input, output, session){
                            input$start_date
                          }, ignoreNULL = FALSE)
   
+  # Plot Header of stock ticker
+  stock_selection_triggered <- eventReactive(input$submit,{
+    str_glue("Stock prices of the following: {get_symbol_from_user_input(input$stock_1)}, 
+             {get_symbol_from_user_input(input$stock_2)}, 
+             {get_symbol_from_user_input(input$stock_3)}, 
+             {get_symbol_from_user_input(input$stock_4)}")
+  }, ignoreNULL = FALSE)
+  
+  output$plot_header <- renderText(
+    stock_selection_triggered()
+  )
+                                             
   
   # Prices of each ticker Plot ----
   portfolio_price_data_tbl <- reactive({
@@ -488,6 +510,19 @@ server <- function(input, output, session){
       plot_portfolio_price()
   })
   output$portfolio_price_data_tbl <- renderPlotly(portfolio_price_data_tbl())
+  
+  # Plot Header of portfolio
+  portfolio_selection_triggered <- eventReactive(input$submit,{
+    str_glue("Portfolio built from the following: {get_symbol_from_user_input(input$stock_1)}, 
+             {get_symbol_from_user_input(input$stock_2)}, 
+             {get_symbol_from_user_input(input$stock_3)}, 
+             {get_symbol_from_user_input(input$stock_4)}")
+  }, ignoreNULL = FALSE)
+  
+  output$plot_header_2 <- renderText(
+    portfolio_selection_triggered()
+  )
+  
   
   # Portfolio data tbl
   portfolio_data_mavg_tbl <- reactive({

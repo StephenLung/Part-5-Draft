@@ -13,8 +13,7 @@ function(data, ggplot = TRUE){
     scale_color_tq() + 
     scale_y_continuous(labels = scales::dollar_format(largest_with_cents = 10),
                        breaks = scales::pretty_breaks()) + 
-    labs(title = str_glue("Stock prices of the following: PLACEHOLDER"),
-         x = "",
+    labs(x = "",
          y = "Adjusted Stock Price (incl dividends)")
   
   if(ggplot){
@@ -105,28 +104,35 @@ function(data, ggplot = TRUE){
   
 }
 generate_portfolio_commentary <-
-function(data){
-  
-  short_window <- data %>% 
-    pull(mavg_short) %>% 
-    is.na() %>% 
-    sum() + 1
-  
-  long_window <- data %>% 
-    pull(mavg_long) %>% 
-    is.na() %>% 
-    sum() + 1
-  
-  warning_flag <- data %>% 
-    tail(1) %>% 
-    mutate(flag = mavg_short > mavg_long) %>% 
-    pull(flag)
-  
-  if(warning_flag){
-    str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is above the {long_window}-day moving average, this indicates a positive trend")
-  } else {
-    str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is below the {long_window}-day moving average, this indicates a positive trend")
+  function(data){
+    
+    short_window <- data %>% 
+      pull(mavg_short) %>% 
+      is.na() %>% 
+      sum() + 1
+    
+    long_window <- data %>% 
+      pull(mavg_long) %>% 
+      is.na() %>% 
+      sum() + 1
+    
+    warning_flag <- data %>% 
+      tail(1) %>% 
+      mutate(flag = mavg_short > mavg_long) %>% 
+      pull(flag)
+    
+    if(warning_flag){
+      str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is above the {long_window}-day moving average, this indicates a positive trend")
+    } else {
+      str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is below the {long_window}-day moving average, this indicates a positive trend")
+    }
+    
+    
   }
-  
-  
-}
+
+
+stock_data_tbl <- get_stock_prices("AAPL", start = "2018-01-01", end = "2018-06-30", mavg_short = 5, mavg_long = 8)
+
+
+stock_data_tbl %>% 
+generate_portfolio_commentary()

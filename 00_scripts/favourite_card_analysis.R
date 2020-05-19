@@ -61,7 +61,7 @@ generate_favourite_card <- function(data){
          info_card(
            title = as.character(data$stock),
            value = str_glue("{data$n_short} <small>vs {data$n_long}</small>") %>% HTML(),
-           sub_value = data$pct_change %>% scales::percent(),
+           sub_value = data$pct_change %>% scales::percent(accuracy = 0.01),
            sub_text_color = ifelse(data$mavg_flag, "success", "danger"),
            sub_icon = ifelse(data$mavg_flag, "arrow-up", "arrow-down")
          ))
@@ -107,13 +107,13 @@ favourite_list_on_start %>%
   
   
 # Generate Favourite Card FINAL ----
-generate_favourite_cards <- function(favourities_ticker,
+generate_favourite_cards <- function(favourites_ticker,
                                      mavg_short = 30,
                                      mavg_long = 90,
                                      start = today() - years(5),
                                      end = today()){
   
-  favourities_ticker %>%
+  favourites_ticker %>%
     
     #Pull the list of stock data with mavg
     map(.f = function(x){
@@ -131,7 +131,7 @@ generate_favourite_cards <- function(favourities_ticker,
       x %>% 
         get_stock_mavg_info()
     }) %>% 
-    set_names(favourities_ticker) %>% 
+    set_names(favourites_ticker) %>% 
     
     #Add in stock as a column, retain position and keep as list for subsequent map
     bind_rows(.id = "stock") %>% 

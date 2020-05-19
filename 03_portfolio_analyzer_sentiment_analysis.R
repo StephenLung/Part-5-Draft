@@ -158,14 +158,17 @@ ui <- navbarPage(
     
     # 2.2 FAVOURITES ----
     div(
-      class = "container hidden-sm hidden-xs",
+      class = "hidden-sm hidden-xs",
       id = "favourite_container",
       
       div(
         class = "",
         column(
           width = 12,
-          h5("Favourites")
+          h5(class = "","Favourites"),
+          actionButton(inputId = "favourites_clear", "Clear Favourites"),
+          actionButton(inputId = "")
+          
         )
       ),
       div(
@@ -337,7 +340,7 @@ ui <- navbarPage(
             h4(textOutput(outputId = "plot_header"))),
           div(
             class = "panel-body",
-            plotlyOutput(outputId = "portfolio_price_data_tbl")
+            # plotlyOutput(outputId = "portfolio_price_data_tbl")
             
           )
         ),
@@ -347,7 +350,7 @@ ui <- navbarPage(
             class = "panel-header",
             h4(textOutput(outputId = "plot_header_2"))),
           div(
-            plotlyOutput(outputId = "portfolio_index_mavg_data_tbl")
+            # plotlyOutput(outputId = "portfolio_index_mavg_data_tbl")
 
           )
         )
@@ -408,7 +411,7 @@ ui <- navbarPage(
   # ),
   
   shiny::tabPanel(
-    title = "Hash Tag Tracker",
+    title = "Sentiment Analysis",
     sidebarLayout(
       sidebarPanel(
         shiny::textInput(inputId = "query", label = "Topic / Hashtag", value = "#covid19"),

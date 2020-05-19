@@ -40,6 +40,10 @@ source("00_prior_script/wealth_index.R")
 source("00_scripts/info_card.R")
 source("00_scripts/generate_favourite_cards.R")
 
+stock_list_tbl <- get_stock_list("SP500")
+current_user_favourites <- c("AAPL", "MSFT", "NFLX", "AMZN")
+
+
 # UI ----
 ui <- navbarPage(
   title = "Portfolio Analytics Prediction App",
@@ -159,48 +163,57 @@ ui <- navbarPage(
       id = "favourite_container",
       
       div(
-        class = "container",
+        class = "", #7.0 project setup
         column(
           width = 12,
-          h5("Favourites")
+          h5(class = "pull-left", "Favourites"), #pulls everything on the same column to the left
+          actionButton(inputId = "favourites_clear", 
+                       "Clear Favourites",
+                       class = "pull-right"), # pulls this to the right
+          actionButton(inputId = "favourites_toggle",
+                       "Show/Hide", class = "pull-right")
         )
       ),
       div(
-        class = "container",
+        class = "",
         id = "favourite_cards",
-        column(
-          width = 3,
-          info_card(
-            title = "AAPL",
-            value = p("20-Day", tags$small("vs 50-Day")),
-            sub_value = "20%"
-          )
-        ),
-        column(
-          width = 3,
-          info_card(
-            title = "MSFT",
-            value = p("20-Day", tags$small("vs 50-Day")),
-            sub_value = "-23%",
-            sub_text_color = "danger"
-          )
-        ),
-        column(
-          width = 3,
-          info_card(
-            title = "NFLX",
-            value = p("20-Day", tags$small("vs 50-Day")),
-            sub_value = "15%"
-          )
-        ),
-        column(
-          width = 3,
-          info_card(
-            title = "AMZN",
-            value = p("20-Day", tags$small("vs 50-Day")),
-            sub_value = "12%"
-          )
-        )
+        # column(
+        #   width = 3,
+        #   info_card(
+        #     title = "AAPL",
+        #     value = p("20-Day", tags$small("vs 50-Day")),
+        #     sub_value = "20%"
+        #   )
+        # ),
+        # column(
+        #   width = 3,
+        #   info_card(
+        #     title = "MSFT",
+        #     value = p("20-Day", tags$small("vs 50-Day")),
+        #     sub_value = "-23%",
+        #     sub_text_color = "danger"
+        #   )
+        # ),
+        # column(
+        #   width = 3,
+        #   info_card(
+        #     title = "NFLX",
+        #     value = p("20-Day", tags$small("vs 50-Day")),
+        #     sub_value = "15%"
+        #   )
+        # ),
+        # column(
+        #   width = 3,
+        #   info_card(
+        #     title = "AMZN",
+        #     value = p("20-Day", tags$small("vs 50-Day")),
+        #     sub_value = "12%"
+        #   )
+        # )
+        verbatimTextOutput(outputId = "favourites_print"),
+        
+        # generate_favourite_cards(current_user_favourites) #enables generation of favourite cards
+        uiOutput(outputId = "favourite_cards")
       )
     ),
     
@@ -292,10 +305,14 @@ ui <- navbarPage(
                                        lib = "font-awesome")),
               div(
                 class = "pull-right",
+                actionButton(inputId = "favourites_add",
+                             label = NULL,
+                             icon = icon("heart", lib = "font-awesome")),
                 actionButton(inputId = "settings_toggle",
                              label = NULL,
                              icon = icon("cog", 
                                          lib = "font-awesome"))
+
               )
             )
           )
@@ -308,7 +325,7 @@ ui <- navbarPage(
               id = "input_settings",
               dateInput("start_date",
                         h4("Starting Date"),
-                        "2006-02-01",
+                        today() - years(2),
                         format = "yyyy-mm-dd"),
               dateInput("end_date",
                         h4("End Date"),
@@ -344,7 +361,7 @@ ui <- navbarPage(
             class = "panel-header",
             h4(textOutput(outputId = "plot_header_2"))),
           div(
-            plotlyOutput(outputId = "portfolio_index_mavg_data_tbl")
+            # plotlyOutput(outputId = "portfolio_index_mavg_data_tbl")
             
           )
         )
@@ -365,7 +382,8 @@ ui <- navbarPage(
           h4("Analyst Commentary")),
         div(
           class = "panel-body",
-          textOutput(outputId = "portfolio_commentary")
+          textOutput(outputId = "portfolio_commentary") #ERROR ----
+          
           # stock_data_tbl %>% 
           #   generate_commentary(user_input = user_input)
         )
@@ -384,7 +402,7 @@ ui <- navbarPage(
     h1("Placeholder"),
     p("Placeholder")
   ),
-  # 4.0 PORTFOLIO ANALYSIS ----
+  # 4.0 OTHERS ----
   tabPanel(
     title = "About the Author",
     id = "section_3",
@@ -524,7 +542,19 @@ server <- function(input, output, session){
   
   
   # Portfolio data tbl
-  portfolio_data_mavg_tbl <- reactive({
+  # portfolio_data_mavg_tbl <- reactive({
+  #   multi_asset_price_portfolio(symbols = symbols(),
+  #                               end = end(),
+  #                               start = start(),
+  #                               wts_tbl = wts_tbl()) %>%
+  #     multi_asset_return_portfolio(period = "monthly") %>%
+  #     wealth_index(wts_tbl = wts_tbl(), name_portfolio = "test portfolio") %>%
+  #     mavg_calculation(mavg_short = input$mavg_short, 
+  #                      mavg_long = input$mavg_long)
+  #   
+  # })
+  
+  portfolio_data_mavg_tbl <- eventReactive(input$submit,{
     multi_asset_price_portfolio(symbols = symbols(),
                                 end = end(),
                                 start = start(),
@@ -534,7 +564,8 @@ server <- function(input, output, session){
       mavg_calculation(mavg_short = input$mavg_short, 
                        mavg_long = input$mavg_long)
     
-  })
+  }, ignoreNULL = FALSE)
+  
   
   # Portfolio investment index Plot ----
   portfolio_index_data_tbl <- reactive({
@@ -557,6 +588,94 @@ server <- function(input, output, session){
     portfolio_data_mavg_tbl() %>% 
       generate_portfolio_commentary()
   )
+  
+  # 2.0 FAVOURITES ----
+  
+  # 2.1 Reactive Values - User Favourites ----
+  reactive_values <- reactiveValues() # creates a list of reactive values
+  reactive_values$favourites_list <- current_user_favourites
+  
+  output$favourites_print <- renderPrint(reactive_values$favourites_list) 
+  
+  # 2.2 Add Favourites ----
+  observeEvent(eventExpr = input$favourites_add, {
+    
+    reactive_values$favourites_list <- c(reactive_values$favourites_list, 
+                                         input$stock_1 %>% get_symbol_from_user_input(),
+                                         input$stock_2 %>% get_symbol_from_user_input(),
+                                         input$stock_3 %>% get_symbol_from_user_input(),
+                                         input$stock_4 %>% get_symbol_from_user_input()) %>% 
+      unique()
+    
+  })
+  
+  # 2.3 Render Favourite Cards ----
+  output$favourite_cards <- renderUI({
+    generate_favourite_cards(
+      favourites_ticker  = reactive_values$favourites_list,
+      start              = input$start_date,
+      end                = input$end_date,
+      mavg_short         = input$mavg_short,
+      mavg_long          = input$mavg_long
+    )
+  })
+  
+  # 2.4 Delete Favourites ---- 
+  observeEvent(eventExpr = input$favourites_clear,{
+    
+    modalDialog(title = "Clear Favourites", #enables modal pop up message
+                size = "m",
+                easyClose = TRUE, #allows user to click away from pop up to close
+                p(class = "lead",
+                  "Are you sure you want to remove favourites?") %>% strong(),
+                br(),
+                div(
+                  selectInput(inputId = "drop_list",
+                              label = "Remove Single Favourite",
+                              choices = reactive_values$favourites_list %>% sort()
+                              ),
+                  actionButton(inputId = "remove_single_favourite",
+                               label = "Clear Single",
+                               class = "btn-warning"),
+                  actionButton(inputId = "remove_all_favourite",
+                               label = "Clear ALL Favourites",
+                               class = "btn-danger")
+                ),
+                
+                
+                
+                footer = modalButton("Exit") #button at the bottom to exit
+                
+                ) %>% showModal() #shows the modal on screen
+  })
+  
+  # 2.4.1 Clear Single ----
+  observeEvent(eventExpr = input$remove_single_favourite,{
+    
+    # reactive_values$favourites_list <- reactive_values$favourites_list %>%
+    #   .[reactive_values$favourites_list != input$drop_list]
+    
+    reactive_values$favourites_list <- reactive_values$favourites_list %>%
+      data.frame(ticker = .) %>%
+      filter(ticker != input$drop_list) %>%
+      pull(ticker) %>%
+      as.character()
+    
+    
+    updateSelectInput(session = session,
+                      inputId = "drop_list",
+                      choices = reactive_values$favourites_list %>% sort())
+    
+  })
+  
+  
+  # 2.4.2 Clear All ----
+  observeEvent(eventExpr = input$remove_all_favourite,{
+    
+    
+    
+  })
+
   
 }
 

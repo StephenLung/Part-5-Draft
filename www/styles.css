@@ -1,3 +1,9 @@
 .panel{
   padding: 10px
+  
+} 
+
+/* Adding padding in between favourite buttons */
+#favourites_toggle{
+    margin-right: 10px;
 }

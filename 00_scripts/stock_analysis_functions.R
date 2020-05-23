@@ -9,11 +9,11 @@ function(stock_index){
   
 }
 get_symbol_from_user_input <-
-function(user_input){
+function(user_input, num = 1){
   # APPLICATION: Pulls the ticker from user's input 
   user_input %>% 
     str_split(pattern = ", ") %>% 
-    pluck(1,1)
+    pluck(1, num)
   }
 get_stock_prices <-
 function(symbol, mavg_short = 5, mavg_long = 20, start = today() - years(5) + days(1), end = today()){

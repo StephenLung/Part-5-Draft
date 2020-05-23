@@ -116,17 +116,17 @@ generate_portfolio_commentary <-
       is.na() %>% 
       sum() + 1
     
-    warning_flag <- data %>% 
-      tail(1) %>% 
-      mutate(flag = mavg_short > mavg_long) %>% 
+    warning_flag <- data %>%
+      tail(1) %>%
+      mutate(flag = mavg_short > mavg_long) %>%
       pull(flag)
-    
+
     if(warning_flag){
       str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is above the {long_window}-day moving average, this indicates a positive trend")
     } else {
       str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is below the {long_window}-day moving average, this indicates a positive trend")
     }
-    
+
     
   }
 

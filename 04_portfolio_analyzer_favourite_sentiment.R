@@ -388,14 +388,15 @@ ui <- navbarPage(
     sidebarLayout(
       sidebarPanel(
         uiOutput("sentiment_search"),
-        # shiny::textInput(inputId = "query", label = "Topic / Hashtag", value = "#covid19"),
+        textOutput("sentiment"), 
+        br(),
         sliderInput(
           inputId = "n_tweets",
           label   = "Number of tweets:",
           min     = 1,
           max     = 1500,
-          value   = 100),
-        shiny::textInput(inputId = "location", label = "Location", value = "Pittsburgh, PA"),
+          value   = 200),
+        shiny::textInput(inputId = "location", label = "Location", value = "Toronto, ON"),
         sliderInput(
           inputId = "n_miles",
           label   = "Twitter Search Radius (miles)",
@@ -407,9 +408,29 @@ ui <- navbarPage(
       
       # Show a plot of the generated distribution
       mainPanel(
-        # verbatimTextOutput(outputId = "sentiment_search")
-        plotlyOutput(outputId = "plotly")
-      )
+        div(
+          class = "row",
+          div(
+            class = "col-sm-8 panel",
+            div(class = "panel-heading", h5("Sentiment Polarity")),
+            div(class = "panel-body", plotlyOutput(outputId = "plotly", height = "250px"))
+          ),
+          div(
+            class = "col-sm-4 panel",
+            div(class = "panel-heading", h5("Tweet Proximity")),
+            div(class = "panel-body", leafletOutput(outputId = "leaflet", height = 250))
+          )
+        ),
+        
+        div(
+          class = "row",
+          div(
+            class = "col-sm-12 panel",
+            div(class = "panel-heading", h5("Sentiment Word Cloud")),
+            div(class = "panel-body", plotOutput(outputId = "wordcloud", height = "400px"))
+          )
+        )
+    )
     )
   ),
   
@@ -690,8 +711,15 @@ server <- function(input, output, session){
   # 3.0 SENTIMENT ----
   
   output$sentiment_search <- renderUI({
-    input_stock <- input$stock_1 %>% get_symbol_from_user_input(num = 2)
+    input_stock <- input$stock_1 %>% get_symbol_from_user_input(num = 2) %>%   str_split(pattern = " ") %>% 
+      pluck(1, 1)
     shiny::textInput(inputId = "query_test", label = "Topic / Hashtag", value = input_stock)
+  })
+  
+  # verbatim output the input
+  output$sentiment <- renderText({
+    # print(input$query_test)
+    input$query_test
   })
 
   # 3.1 Setup Reactive Values ----
@@ -699,11 +727,13 @@ server <- function(input, output, session){
 
   observeEvent(input$submit_2, {
     # Process data
-
+    
     rv$geocode <- input$location %>% geocode_for_free() %>% near_geocode(input$n_miles)
-
+    
+    # CHANGE - Can update the input$stock_1 to be query_test 
     rv$data <-  search_tweets(
-      q           = input$stock_1 %>% get_symbol_from_user_input(num = 2),
+      q           = input$stock_1 %>% get_symbol_from_user_input(num = 2) %>% str_split(pattern = " ") %>% pluck(1, 1),
+      # q = input$query_test,
       n           = input$n_tweets,
       include_rts = FALSE,
       geocode     = rv$geocode,
@@ -758,6 +788,54 @@ server <- function(input, output, session){
         )
       )
 
+  })
+  
+  # 3.3 Leaflet -----
+  output$leaflet <- renderLeaflet({
+    
+    req(rv$geocode)
+    
+    data_prepared <- tibble(
+      location = rv$geocode
+    ) %>%
+      separate(location, into = c("lat", "lon", "distance"), sep = ",", remove = FALSE) %>%
+      mutate(distance = distance %>% str_remove_all("[^0-9.-]")) %>%
+      mutate_at(.vars = vars(-location), as.numeric) 
+    
+    data_prepared %>%
+      leaflet() %>%
+      setView(data_prepared$lon, data_prepared$lat, zoom = 3) %>%
+      addTiles() %>%
+      addMarkers(~lon, ~lat, popup = ~as.character(location), label = ~as.character(location)) %>%
+      addCircles(lng = ~lon, lat = ~lat, weight = 1, radius = ~distance/0.000621371)
+    
+  })
+  
+  # 3.4 Wordcloud ----
+  output$wordcloud <- renderPlot({
+    
+    req(rv$data)
+    
+    tweets_tokenized_tbl <- rv$data %>%
+      select(text) %>%
+      rowid_to_column() %>%
+      unnest_tokens(word, text)
+    
+    sentiment_bing_tbl <- tweets_tokenized_tbl %>%
+      inner_join(get_sentiments("bing"))
+    
+    sentiment_by_word_tbl <- sentiment_bing_tbl %>%
+      count(word, sentiment, sort = TRUE) 
+    
+    sentiment_by_word_tbl %>%
+      # slice(1:100) %>%
+      mutate(sentiment = factor(sentiment, levels = c("positive", "negative"))) %>%
+      ggplot(aes(label = word, color = sentiment, size = n)) +
+      geom_text_wordcloud_area() + 
+      facet_wrap(~ sentiment, ncol = 2) +
+      theme_tq(base_size = 30) +
+      scale_color_tq() +
+      scale_size_area(max_size = 16) 
   })
   
   

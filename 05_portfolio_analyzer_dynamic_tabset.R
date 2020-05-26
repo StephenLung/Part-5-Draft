@@ -175,6 +175,7 @@ ui <- navbarPage(
       class = "container hidden-sm hidden-xs",
       id = "favourite_container",
       
+      # 2.2.1 USER INPUTS ----
       div(
         class = "", #7.0 project setup
         column(
@@ -187,6 +188,8 @@ ui <- navbarPage(
                        "Show/Hide", class = "pull-right")
         )
       ),
+      
+      # 2.2.2 FAVOURITE CARDS ----
       div(
         class = "row",
         id = "favourite_cards_section",
@@ -196,10 +199,12 @@ ui <- navbarPage(
     
     
     
-    # 2.3 THREE WELL PANEL APPLICATION UI ----
+    # 2.3 APPLICATION UI ----
     div(
       class = "container",
       id = "application_ui",
+      
+      # 2.3.1 USER INPUTS ---- 
       div(
         class = "col-sm-4",
         fluidRow(
@@ -319,29 +324,14 @@ ui <- navbarPage(
           )  
         )
       ),
+      
+      
+      # 2.3.2 PLOT PANEL ----
       div(
         class = "col-sm-8",
-        div(
-          class = "panel",
-          div(
-            class = "panel-header",
-            h4(textOutput(outputId = "plot_header"))),
-          div(
-            class = "panel-body",
-            plotlyOutput(outputId = "portfolio_price_data_tbl")
-            
-          )
-        ),
-        div(
-          class = "panel",
-          div(
-            class = "panel-header",
-            h4(textOutput(outputId = "plot_header_2"))),
-          div(
-            # plotlyOutput(outputId = "portfolio_index_mavg_data_tbl")
-            
-          )
-        )
+        uiOutput(outputId = "stock_charts"),
+        uiOutput(outputId = "portfolio_charts")
+
       )
       
       
@@ -380,59 +370,59 @@ ui <- navbarPage(
   ),
   
   # 4.0 SENTIMENT ANALYSIS ----
-  tabPanel(
-    title = "Sentiment Analysis",
-    id = "section_4",
-    value = "page_4",
-    h1("Placeholder"),
-    sidebarLayout(
-      sidebarPanel(
-        uiOutput("sentiment_search"),
-        textOutput("sentiment"), 
-        br(),
-        sliderInput(
-          inputId = "n_tweets",
-          label   = "Number of tweets:",
-          min     = 1,
-          max     = 1500,
-          value   = 200),
-        shiny::textInput(inputId = "location", label = "Location", value = "Toronto, ON"),
-        sliderInput(
-          inputId = "n_miles",
-          label   = "Twitter Search Radius (miles)",
-          min     = 1,
-          max     = 1500,
-          value   = 1000),
-        shiny::actionButton(inputId = "submit_2", "Submit", class = "btn-primary")
-      ),
-      
-      # Show a plot of the generated distribution
-      mainPanel(
-        div(
-          class = "row",
-          div(
-            class = "col-sm-8 panel",
-            div(class = "panel-heading", h5("Sentiment Polarity")),
-            div(class = "panel-body", plotlyOutput(outputId = "plotly", height = "250px"))
-          ),
-          div(
-            class = "col-sm-4 panel",
-            div(class = "panel-heading", h5("Tweet Proximity")),
-            div(class = "panel-body", leafletOutput(outputId = "leaflet", height = 250))
-          )
-        ),
-        
-        div(
-          class = "row",
-          div(
-            class = "col-sm-12 panel",
-            div(class = "panel-heading", h5("Sentiment Word Cloud")),
-            div(class = "panel-body", plotOutput(outputId = "wordcloud", height = "400px"))
-          )
-        )
-    )
-    )
-  ),
+  # tabPanel(
+  #   title = "Sentiment Analysis",
+  #   id = "section_4",
+  #   value = "page_4",
+  #   h1("Placeholder"),
+  #   sidebarLayout(
+  #     sidebarPanel(
+  #       uiOutput("sentiment_search"),
+  #       textOutput("sentiment"), 
+  #       br(),
+  #       sliderInput(
+  #         inputId = "n_tweets",
+  #         label   = "Number of tweets:",
+  #         min     = 1,
+  #         max     = 1500,
+  #         value   = 200),
+  #       shiny::textInput(inputId = "location", label = "Location", value = "Toronto, ON"),
+  #       sliderInput(
+  #         inputId = "n_miles",
+  #         label   = "Twitter Search Radius (miles)",
+  #         min     = 1,
+  #         max     = 1500,
+  #         value   = 1000),
+  #       shiny::actionButton(inputId = "submit_2", "Submit", class = "btn-primary")
+  #     ),
+  #     
+  #     # Show a plot of the generated distribution
+  #     mainPanel(
+  #       div(
+  #         class = "row",
+  #         div(
+  #           class = "col-sm-8 panel",
+  #           div(class = "panel-heading", h5("Sentiment Polarity")),
+  #           div(class = "panel-body", plotlyOutput(outputId = "plotly", height = "250px"))
+  #         ),
+  #         div(
+  #           class = "col-sm-4 panel",
+  #           div(class = "panel-heading", h5("Tweet Proximity")),
+  #           div(class = "panel-body", leafletOutput(outputId = "leaflet", height = 250))
+  #         )
+  #       ),
+  #       
+  #       div(
+  #         class = "row",
+  #         div(
+  #           class = "col-sm-12 panel",
+  #           div(class = "panel-heading", h5("Sentiment Word Cloud")),
+  #           div(class = "panel-body", plotOutput(outputId = "wordcloud", height = "400px"))
+  #         )
+  #       )
+  #   )
+  #   )
+  # ),
   
   # 5.0 OTHERS ----
   tabPanel(
@@ -549,8 +539,16 @@ server <- function(input, output, session){
     stock_selection_triggered()
   )
   
-  
   # Prices of each ticker Plot ----
+  # stock_price_data_tbl <- reactive({
+  #   symbols()[1] %>% 
+  #     single_asset_price(end = end(), 
+  #                     start = start()) %>% 
+  #     plot_stock_price()
+  # })
+  # output$stock_price_data_tbl <- renderPlotly(stock_price_data_tbl())
+  
+  # Portfolio: Prices of each ticker Plot ----
   portfolio_price_data_tbl <- reactive({
     multi_asset_price_portfolio(symbols = symbols(), 
                                 end = end(), 
@@ -578,10 +576,10 @@ server <- function(input, output, session){
     multi_asset_price_portfolio(symbols = symbols(),
                                 end = end(),
                                 start = start(),
-                                wts_tbl = wts_tbl()) %>%
-      multi_asset_return_portfolio(period = "monthly") %>%
-      wealth_index(wts_tbl = wts_tbl(), name_portfolio = "test portfolio") %>%
-      mavg_calculation(mavg_short = input$mavg_short,
+                                wts_tbl = wts_tbl()) %>% # grabs list of stocks
+      multi_asset_return_portfolio(period = "monthly") %>% # convert prices to returns
+      wealth_index(wts_tbl = wts_tbl(), name_portfolio = "test portfolio") %>% # build a wealth index
+      portfolio_mavg_calculation(mavg_short = input$mavg_short, # calculate moving avg 
                        mavg_long = input$mavg_long)
 
   })
@@ -709,134 +707,220 @@ server <- function(input, output, session){
   # })
   
   # 3.0 SENTIMENT ----
+  # 
+  # output$sentiment_search <- renderUI({
+  #   input_stock <- input$stock_1 %>% get_symbol_from_user_input(num = 2) %>%   str_split(pattern = " ") %>% 
+  #     pluck(1, 1)
+  #   shiny::textInput(inputId = "query_test", label = "Topic / Hashtag", value = input_stock)
+  # })
+  # 
+  # # verbatim output the input
+  # output$sentiment <- renderText({
+  #   # print(input$query_test)
+  #   input$query_test
+  # })
+  # 
+  # # 3.1 Setup Reactive Values ----
+  # rv <- reactiveValues()
+  # 
+  # observeEvent(input$submit_2, {
+  #   # Process data
+  #   
+  #   rv$geocode <- input$location %>% geocode_for_free() %>% near_geocode(input$n_miles)
+  #   
+  #   # CHANGE - Can update the input$stock_1 to be query_test 
+  #   rv$data <-  search_tweets(
+  #     q           = input$stock_1 %>% get_symbol_from_user_input(num = 2) %>% str_split(pattern = " ") %>% pluck(1, 1),
+  #     # q = input$query_test,
+  #     n           = input$n_tweets,
+  #     include_rts = FALSE,
+  #     geocode     = rv$geocode,
+  #     lang        = "en",
+  #     token       = token
+  #   )
+  # 
+  #   rv$tweet_sentiment <- rv$data %>%
+  #     select(text) %>%
+  #     rowid_to_column() %>%
+  #     unnest_tokens(word, text) %>%
+  #     inner_join(get_sentiments("bing"))
+  # 
+  # }, ignoreNULL = FALSE)
+  # 
+  # # 3.2 Plotly ----
+  # output$plotly <- renderPlotly({
+  #   req(rv$tweet_sentiment, rv$data)
+  # 
+  #   sentiment_by_row_id_tbl <- rv$tweet_sentiment %>%
+  #     select(-word) %>%
+  #     count(rowid, sentiment) %>%
+  #     pivot_wider(names_from = sentiment, values_from = n, values_fill = list(n = 0)) %>%
+  #     mutate(sentiment = positive - negative) %>%
+  #     left_join(
+  #       rv$data %>% select(screen_name, text) %>% rowid_to_column()
+  #     )
+  # 
+  #   label_wrap <- label_wrap_gen(width = 60)
+  # 
+  #   data_formatted <- sentiment_by_row_id_tbl %>%
+  #     mutate(text_formatted = str_glue("Row ID: {rowid}
+  #                                    Screen Name: {screen_name}
+  #                                    Text:
+  #                                    {label_wrap(text)}"))
+  # 
+  #   g <- data_formatted %>%
+  #     ggplot(aes(rowid, sentiment)) +
+  #     geom_line(color = "#2c3e50", alpha = 0.5) +
+  #     geom_point(aes(text = text_formatted), color = "#2c3e50") +
+  #     geom_smooth(method = "loess", span = 0.25, se = FALSE, color = "blue") +
+  #     geom_hline(aes(yintercept = mean(sentiment)), color = "blue") +
+  #     geom_hline(aes(yintercept = median(sentiment) + 1.96*IQR(sentiment)), color = "red") +
+  #     geom_hline(aes(yintercept = median(sentiment) - 1.96*IQR(sentiment)), color = "red") +
+  #     theme_tq() +
+  #     labs(x = "Twitter User", y = "Sentiment")
+  # 
+  #   ggplotly(g, tooltip = "text") %>%
+  #     layout(
+  #       xaxis = list(
+  #         rangeslider = list(type = "date")
+  #       )
+  #     )
+  # 
+  # })
+  # 
+  # # 3.3 Leaflet -----
+  # output$leaflet <- renderLeaflet({
+  #   
+  #   req(rv$geocode)
+  #   
+  #   data_prepared <- tibble(
+  #     location = rv$geocode
+  #   ) %>%
+  #     separate(location, into = c("lat", "lon", "distance"), sep = ",", remove = FALSE) %>%
+  #     mutate(distance = distance %>% str_remove_all("[^0-9.-]")) %>%
+  #     mutate_at(.vars = vars(-location), as.numeric) 
+  #   
+  #   data_prepared %>%
+  #     leaflet() %>%
+  #     setView(data_prepared$lon, data_prepared$lat, zoom = 3) %>%
+  #     addTiles() %>%
+  #     addMarkers(~lon, ~lat, popup = ~as.character(location), label = ~as.character(location)) %>%
+  #     addCircles(lng = ~lon, lat = ~lat, weight = 1, radius = ~distance/0.000621371)
+  #   
+  # })
+  # 
+  # # 3.4 Wordcloud ----
+  # output$wordcloud <- renderPlot({
+  #   
+  #   req(rv$data)
+  #   
+  #   tweets_tokenized_tbl <- rv$data %>%
+  #     select(text) %>%
+  #     rowid_to_column() %>%
+  #     unnest_tokens(word, text)
+  #   
+  #   sentiment_bing_tbl <- tweets_tokenized_tbl %>%
+  #     inner_join(get_sentiments("bing"))
+  #   
+  #   sentiment_by_word_tbl <- sentiment_bing_tbl %>%
+  #     count(word, sentiment, sort = TRUE) 
+  #   
+  #   sentiment_by_word_tbl %>%
+  #     # slice(1:100) %>%
+  #     mutate(sentiment = factor(sentiment, levels = c("positive", "negative"))) %>%
+  #     ggplot(aes(label = word, color = sentiment, size = n)) +
+  #     geom_text_wordcloud_area() + 
+  #     facet_wrap(~ sentiment, ncol = 2) +
+  #     theme_tq(base_size = 30) +
+  #     scale_color_tq() +
+  #     scale_size_area(max_size = 16) 
+  # })
   
-  output$sentiment_search <- renderUI({
-    input_stock <- input$stock_1 %>% get_symbol_from_user_input(num = 2) %>%   str_split(pattern = " ") %>% 
-      pluck(1, 1)
-    shiny::textInput(inputId = "query_test", label = "Topic / Hashtag", value = input_stock)
-  })
+  # 4.0 FAVOURITE PLOTS ----
   
-  # verbatim output the input
-  output$sentiment <- renderText({
-    # print(input$query_test)
-    input$query_test
-  })
-
-  # 3.1 Setup Reactive Values ----
-  rv <- reactiveValues()
-
-  observeEvent(input$submit_2, {
-    # Process data
+  output$stock_charts <- renderUI({
     
-    rv$geocode <- input$location %>% geocode_for_free() %>% near_geocode(input$n_miles)
-    
-    # CHANGE - Can update the input$stock_1 to be query_test 
-    rv$data <-  search_tweets(
-      q           = input$stock_1 %>% get_symbol_from_user_input(num = 2) %>% str_split(pattern = " ") %>% pluck(1, 1),
-      # q = input$query_test,
-      n           = input$n_tweets,
-      include_rts = FALSE,
-      geocode     = rv$geocode,
-      lang        = "en",
-      token       = token
-    )
-
-    rv$tweet_sentiment <- rv$data %>%
-      select(text) %>%
-      rowid_to_column() %>%
-      unnest_tokens(word, text) %>%
-      inner_join(get_sentiments("bing"))
-
-  }, ignoreNULL = FALSE)
-
-  # 3.2 Plotly ----
-  output$plotly <- renderPlotly({
-    req(rv$tweet_sentiment, rv$data)
-
-    sentiment_by_row_id_tbl <- rv$tweet_sentiment %>%
-      select(-word) %>%
-      count(rowid, sentiment) %>%
-      pivot_wider(names_from = sentiment, values_from = n, values_fill = list(n = 0)) %>%
-      mutate(sentiment = positive - negative) %>%
-      left_join(
-        rv$data %>% select(screen_name, text) %>% rowid_to_column()
-      )
-
-    label_wrap <- label_wrap_gen(width = 60)
-
-    data_formatted <- sentiment_by_row_id_tbl %>%
-      mutate(text_formatted = str_glue("Row ID: {rowid}
-                                     Screen Name: {screen_name}
-                                     Text:
-                                     {label_wrap(text)}"))
-
-    g <- data_formatted %>%
-      ggplot(aes(rowid, sentiment)) +
-      geom_line(color = "#2c3e50", alpha = 0.5) +
-      geom_point(aes(text = text_formatted), color = "#2c3e50") +
-      geom_smooth(method = "loess", span = 0.25, se = FALSE, color = "blue") +
-      geom_hline(aes(yintercept = mean(sentiment)), color = "blue") +
-      geom_hline(aes(yintercept = median(sentiment) + 1.96*IQR(sentiment)), color = "red") +
-      geom_hline(aes(yintercept = median(sentiment) - 1.96*IQR(sentiment)), color = "red") +
-      theme_tq() +
-      labs(x = "Twitter User", y = "Sentiment")
-
-    ggplotly(g, tooltip = "text") %>%
-      layout(
-        xaxis = list(
-          rangeslider = list(type = "date")
+    tab_panel_last_analysis <- tabPanel(
+      title = "Last Analysis",
+      div(
+        class = "panel",
+        div(
+          class = "panel-header",
+          h4(input$stock_1 %>% get_symbol_from_user_input())),
+        div(
+          class = "panel-body",
+          input$stock_1 %>%
+            get_symbol_from_user_input() %>% 
+            single_asset_price(end = end(),
+                               start = start()) %>% 
+            stock_mavg_calculation(mavg_short = input$mavg_short, # calculate moving avg 
+                                   mavg_long = input$mavg_long) %>% 
+            plot_stock_mavg()
+          
         )
       )
+    )
+    
+    tabsetPanel(
+      id = "tab_panel_stock_chart",
+      type = "pills",
+      
+      
+      tabPanel(
+        title = "Stock Portfolio Analysis",
+        div(
+          class = "panel",
+          div(
+            class = "panel-header",
+            h4(textOutput(outputId = "plot_header"))),
+          div(
+            class = "panel-body",
+            plotlyOutput(outputId = "portfolio_price_data_tbl")
+            
+          )
+        )
+      ),
+      
+      tab_panel_last_analysis,
+      # Setup stock plot based on the first favourite in favourite list table
+      tabPanel(
+        title = reactive_values$favourites_list[[1]],
+        div(
+          class = "panel",
+          div(
+            class = "panel-header",
+            h4(str_glue("Stock Price of {reactive_values$favourites_list[[1]]}"))
+          ),
+          div(
+            class = "panel-body",
+            reactive_values$favourites_list[[1]] %>%
+              single_asset_price(end = end(),
+                               start = start()) %>% 
+              stock_mavg_calculation(mavg_short = input$mavg_short, # calculate moving avg 
+                                     mavg_long = input$mavg_long) %>% 
+              plot_stock_mavg()
 
+          )
+        )
+      )
+    )
+  })
+      
+  output$portfolio_charts <- renderUI({
+
+    
+    div(
+      class = "panel",
+      div(
+        class = "panel-header",
+        h4(textOutput(outputId = "plot_header_2"))),
+      div(
+        class = "panel-body",
+        plotlyOutput(outputId = "portfolio_index_mavg_data_tbl")
+      )
+    )
   })
   
-  # 3.3 Leaflet -----
-  output$leaflet <- renderLeaflet({
-    
-    req(rv$geocode)
-    
-    data_prepared <- tibble(
-      location = rv$geocode
-    ) %>%
-      separate(location, into = c("lat", "lon", "distance"), sep = ",", remove = FALSE) %>%
-      mutate(distance = distance %>% str_remove_all("[^0-9.-]")) %>%
-      mutate_at(.vars = vars(-location), as.numeric) 
-    
-    data_prepared %>%
-      leaflet() %>%
-      setView(data_prepared$lon, data_prepared$lat, zoom = 3) %>%
-      addTiles() %>%
-      addMarkers(~lon, ~lat, popup = ~as.character(location), label = ~as.character(location)) %>%
-      addCircles(lng = ~lon, lat = ~lat, weight = 1, radius = ~distance/0.000621371)
-    
-  })
-  
-  # 3.4 Wordcloud ----
-  output$wordcloud <- renderPlot({
-    
-    req(rv$data)
-    
-    tweets_tokenized_tbl <- rv$data %>%
-      select(text) %>%
-      rowid_to_column() %>%
-      unnest_tokens(word, text)
-    
-    sentiment_bing_tbl <- tweets_tokenized_tbl %>%
-      inner_join(get_sentiments("bing"))
-    
-    sentiment_by_word_tbl <- sentiment_bing_tbl %>%
-      count(word, sentiment, sort = TRUE) 
-    
-    sentiment_by_word_tbl %>%
-      # slice(1:100) %>%
-      mutate(sentiment = factor(sentiment, levels = c("positive", "negative"))) %>%
-      ggplot(aes(label = word, color = sentiment, size = n)) +
-      geom_text_wordcloud_area() + 
-      facet_wrap(~ sentiment, ncol = 2) +
-      theme_tq(base_size = 30) +
-      scale_color_tq() +
-      scale_size_area(max_size = 16) 
-  })
   
   
 }

@@ -1,3 +1,32 @@
+
+
+plot_stock_price <-
+  function(data, ggplot = TRUE){
+    
+    p <- data %>% 
+      mutate(label_text = str_glue("Ticker: {symbol}
+                                    Date: {date}
+                                    Price: {scales::dollar(adjusted)}")) %>% 
+      ggplot(aes(date, adjusted)) + 
+      geom_point(aes(text = label_text), size = 0.1)+
+      geom_line(lwd = 0.5) +
+      theme_tq() + 
+      theme(legend.position = "right") +
+      scale_color_tq() + 
+      scale_y_continuous(labels = scales::dollar_format(largest_with_cents = 10),
+                         breaks = scales::pretty_breaks()) + 
+      labs(x = "",
+           y = "Adjusted Stock Price (incl dividends)")
+    
+    if(ggplot){
+      ggplotly(p, tooltip = "text") %>% 
+        layout(xaxis = list(
+          rangeslider = list(type = "date")
+        ))
+    }
+    
+  }
+
 plot_portfolio_price <-
 function(data, ggplot = TRUE){
   
@@ -57,7 +86,58 @@ function(data, ggplot = TRUE){
   }
   
 }
-mavg_calculation <-
+
+stock_mavg_calculation <- 
+  function(data, mavg_short = 20,
+           mavg_long = 50){
+    
+    data %>% 
+      mutate(mavg_short = rollmean(adjusted, k = mavg_short, fill = NA, align = "right"),
+             mavg_long = rollmean(adjusted, k = mavg_long, fill = NA, align = "right"))
+    
+  }  
+
+plot_stock_mavg <- 
+  plot_portfolio_index_mavg <-
+  function(data, ggplot = TRUE){
+    
+    p <- data %>%
+      
+      # mutate(mavg_short = rollmean(investment.growth, k = mavg_short, fill = NA, align = "right"),
+      # mavg_long = rollmean(investment.growth, k = mavg_long, fill = NA, align = "right")) %>% 
+      mutate(label_text = str_glue("Ticker: {symbol}
+                               Date: {date}
+                               Price: {scales::dollar(adjusted)}
+                               SMA: {scales::dollar(mavg_short)}
+                               LMA: {scales::dollar(mavg_long)}")) %>% 
+      pivot_longer(cols = adjusted:mavg_long, names_to = "legend", values_to = "value",
+                   names_ptypes = list(legend = factor(levels = c("adjusted",
+                                                                  "mavg_short",
+                                                                  "mavg_long")))) %>% 
+      ggplot(aes(date, value, color = legend, group = legend)) +
+      geom_point(aes(text = label_text), size = 0.1) + 
+      geom_line(lwd = 1) + 
+      theme_tq() + 
+      theme(legend.position = "right") +
+      scale_color_tq() +
+      scale_y_continuous(labels = scales::dollar_format(largest_with_cents = 10),
+                         breaks = scales::pretty_breaks()) + 
+      labs(
+           x = "",
+           y = "Adjusted Stock Price (incl dividends)")
+    
+    if(ggplot){
+      ggplotly(p, tooltip = "text") %>% 
+        layout(xaxis = list(
+          rangeslider = list(type = "date")
+        ))
+    }
+    
+    
+  }
+
+
+portfolio_mavg_calculation <-
 function(data, mavg_short = 20,
                              mavg_long = 50){
   

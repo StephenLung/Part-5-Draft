@@ -840,69 +840,78 @@ server <- function(input, output, session){
   
   output$stock_charts <- renderUI({
     
-    tab_panel_last_analysis <- tabPanel(
-      title = "Last Analysis",
+    # # Last Analysis 
+    # tab_panel_last_analysis <- tabPanel(
+    #   title = "Last Analysis",
+    #   div(
+    #     class = "panel",
+    #     div(
+    #       class = "panel-header",
+    #       h4(input$stock_1 %>% get_symbol_from_user_input())),
+    #     div(
+    #       class = "panel-body",
+    #       input$stock_1 %>%
+    #         get_symbol_from_user_input() %>% 
+    #         single_asset_price(end = end(),
+    #                            start = start()) %>% 
+    #         stock_mavg_calculation(mavg_short = input$mavg_short, # calculate moving avg 
+    #                                mavg_long = input$mavg_long) %>% 
+    #         plot_stock_mavg()
+    #       
+    #     )
+    #   )
+    # )
+    
+    # First Tab Panel 
+    tab_panel_individual_stocks <- tabPanel(
+      title = "Stock Portfolio Analysis",
       div(
         class = "panel",
         div(
           class = "panel-header",
-          h4(input$stock_1 %>% get_symbol_from_user_input())),
+          h4(textOutput(outputId = "plot_header"))),
         div(
           class = "panel-body",
-          input$stock_1 %>%
-            get_symbol_from_user_input() %>% 
-            single_asset_price(end = end(),
-                               start = start()) %>% 
-            stock_mavg_calculation(mavg_short = input$mavg_short, # calculate moving avg 
-                                   mavg_long = input$mavg_long) %>% 
-            plot_stock_mavg()
+          plotlyOutput(outputId = "portfolio_price_data_tbl")
           
         )
       )
     )
     
-    tabsetPanel(
-      id = "tab_panel_stock_chart",
-      type = "pills",
-      
-      
-      tabPanel(
-        title = "Stock Portfolio Analysis",
-        div(
-          class = "panel",
-          div(
-            class = "panel-header",
-            h4(textOutput(outputId = "plot_header"))),
-          div(
-            class = "panel-body",
-            plotlyOutput(outputId = "portfolio_price_data_tbl")
-            
+    # Favourite Panels 
+    favourite_tab_panels <- NULL #start as null so it will invalidate the '...' parameters
+    if (length(reactive_values$favourites_list[[1]]) > 0) { #run the following code if the favourites list is >1
+      favourite_tab_panels <- reactive_values$favourites_list %>% # is a vector of tickers
+        map(.f = function(x) { # create an anonymous function 
+          
+          tabPanel(
+            title = x, 
+            div(
+              class = "panel",
+              div(
+                class = "panel-header",
+                h4(str_glue("Stock Price of {x}"))),
+              div(
+                class = "panel-body",
+                x %>% # replace the initial value with the first vector
+                  single_asset_price(end = end(),
+                                     start = start()) %>% 
+                  stock_mavg_calculation(mavg_short = input$mavg_short, # calculate moving avg 
+                                         mavg_long = input$mavg_long) %>% 
+                  plot_stock_mavg()
+              )
+            )
           )
-        )
-      ),
-      
-      tab_panel_last_analysis,
-      # Setup stock plot based on the first favourite in favourite list table
-      tabPanel(
-        title = reactive_values$favourites_list[[1]],
-        div(
-          class = "panel",
-          div(
-            class = "panel-header",
-            h4(str_glue("Stock Price of {reactive_values$favourites_list[[1]]}"))
-          ),
-          div(
-            class = "panel-body",
-            reactive_values$favourites_list[[1]] %>%
-              single_asset_price(end = end(),
-                               start = start()) %>% 
-              stock_mavg_calculation(mavg_short = input$mavg_short, # calculate moving avg 
-                                     mavg_long = input$mavg_long) %>% 
-              plot_stock_mavg()
-
-          )
-        )
-      )
+        })
+    }
+    
+    # Building the Tabset Panel
+    do.call(
+      what = tabsetPanel,
+      args = list(tab_panel_individual_stocks) %>% 
+        append(favourite_tab_panels) %>% 
+        append(list(id = "tab_panel_stock_chart")) %>% 
+        append(list(type = "pills"))
     )
   })
       

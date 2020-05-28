@@ -316,9 +316,10 @@ ui <- navbarPage(
               hr(),
               sliderInput(inputId = "mavg_short", label = "Short Moving Average", 
                           min = 5, max = 40, value = 5),
-              
               sliderInput(inputId = "mavg_long", label = "Long Moving Average", 
-                          min = 20, max = 120, value = 20) 
+                          min = 20, max = 120, value = 20),
+              actionButton(inputId = "apply_and_save", label = "Apply & Save", 
+                           icon = icon("save"))
               
             )%>% shinyjs::hidden()
           )  
@@ -473,7 +474,6 @@ server <- function(input, output, session){
   observeEvent(input$settings_toggle, {
     shinyjs::toggle(id = "input_settings", anim = TRUE)
   })
-  
   # Button selection to open tabpanel ----
   # Select Stock Analysis
   observeEvent(eventExpr = input$action_section_1,{
@@ -488,6 +488,25 @@ server <- function(input, output, session){
     updateNavbarPage(session, "inNavset", selected = "page_3")
   })
   
+  # Apply & Save Settings ----
+  mavg_short <- eventReactive(input$apply_and_save,{
+    input$mavg_short
+  }, ignoreNULL=FALSE)
+  
+  mavg_long <- eventReactive(input$apply_and_save,{
+    input$mavg_long
+  }, ignoreNULL=FALSE)
+  
+  selected_tab <- eventReactive(input$apply_and_save,{
+    if (is.character(input$tab_panel_stock_chart)){
+      # Tab already selected
+      selected_tab <- input$tab_panel_stock_chart
+    } else {
+      # Tab panel not built yet
+      selected_tab <- "Stock Portfolio Analysis"
+    }
+    selected_tab
+  }, ignoreNULL=FALSE)
   
   # Stock symbols  ----
   # Warning user input requires parsing to the ticker symbol
@@ -579,8 +598,8 @@ server <- function(input, output, session){
                                 wts_tbl = wts_tbl()) %>% # grabs list of stocks
       multi_asset_return_portfolio(period = "monthly") %>% # convert prices to returns
       wealth_index(wts_tbl = wts_tbl(), name_portfolio = "test portfolio") %>% # build a wealth index
-      portfolio_mavg_calculation(mavg_short = input$mavg_short, # calculate moving avg 
-                       mavg_long = input$mavg_long)
+      portfolio_mavg_calculation(mavg_short = mavg_short(), # calculate moving avg 
+                       mavg_long = mavg_long())
 
   })
   
@@ -632,8 +651,8 @@ server <- function(input, output, session){
         favourites_ticker  = reactive_values$favourites_list,
         start              = input$start_date,
         end                = input$end_date,
-        mavg_short         = input$mavg_short,
-        mavg_long          = input$mavg_long
+        mavg_short         = mavg_short(),
+        mavg_long          = mavg_long()
       )
       
     }
@@ -854,8 +873,8 @@ server <- function(input, output, session){
     #         get_symbol_from_user_input() %>% 
     #         single_asset_price(end = end(),
     #                            start = start()) %>% 
-    #         stock_mavg_calculation(mavg_short = input$mavg_short, # calculate moving avg 
-    #                                mavg_long = input$mavg_long) %>% 
+    #         stock_mavg_calculation(mavg_short = mavg_short(), # calculate moving avg 
+    #                                mavg_long = mavg_long()) %>% 
     #         plot_stock_mavg()
     #       
     #     )
@@ -896,8 +915,8 @@ server <- function(input, output, session){
                 x %>% # replace the initial value with the first vector
                   single_asset_price(end = end(),
                                      start = start()) %>% 
-                  stock_mavg_calculation(mavg_short = input$mavg_short, # calculate moving avg 
-                                         mavg_long = input$mavg_long) %>% 
+                  stock_mavg_calculation(mavg_short = mavg_short(), # calculate moving avg 
+                                         mavg_long = mavg_long()) %>% 
                   plot_stock_mavg()
               )
             )
@@ -905,13 +924,13 @@ server <- function(input, output, session){
         })
     }
     
+
     # Building the Tabset Panel
     do.call(
       what = tabsetPanel,
       args = list(tab_panel_individual_stocks) %>% 
         append(favourite_tab_panels) %>% 
-        append(list(id = "tab_panel_stock_chart")) %>% 
-        append(list(type = "pills"))
+        append(list(id = "tab_panel_stock_chart", type = "pills", selected = selected_tab()))
     )
   })
       

@@ -688,7 +688,7 @@ server <- function(input, output, session){
     
   })
   
-  # 3,3 Portfolio investment index Plot ----
+  # 3.3 Portfolio investment index Plot ----
   portfolio_index_data_tbl <- reactive({
     portfolio_data_mavg_tbl()  %>%
       plot_portfolio_index()
@@ -743,16 +743,10 @@ server <- function(input, output, session){
     # First Tab Panel 
     tab_panel_individual_stocks <- tabPanel(
       title = "Stock Portfolio Analysis",
-      div(
-        class = "panel",
-        div(
-          class = "panel-header",
-          h4(textOutput(outputId = "plot_header"))),
-        div(
-          class = "panel-body",
-          plotlyOutput(outputId = "portfolio_price_data_tbl")
-          
-        )
+      
+      panel_card(
+        title = textOutput(outputId = "plot_header"),
+        plotlyOutput(outputId = "portfolio_price_data_tbl")
       )
     )
     
@@ -764,20 +758,15 @@ server <- function(input, output, session){
           
           tabPanel(
             title = x, 
-            div(
-              class = "panel",
-              div(
-                class = "panel-header",
-                h4(str_glue("Stock Price of {x}"))),
-              div(
-                class = "panel-body",
-                x %>% # replace the initial value with the first vector
-                  single_asset_price(end = end(),
-                                     start = start()) %>% 
-                  stock_mavg_calculation(mavg_short = mavg_short(), # calculate moving avg 
-                                         mavg_long = mavg_long()) %>% 
-                  plot_stock_mavg()
-              )
+            
+            panel_card(
+              title = str_glue("Stock Price of {x}"), 
+              x %>% # replace the initial value with the first vector
+                single_asset_price(end = end(),
+                                   start = start()) %>% 
+                stock_mavg_calculation(mavg_short = mavg_short(), # calculate moving avg 
+                                       mavg_long = mavg_long()) %>% 
+                plot_stock_mavg()
             )
           )
         })

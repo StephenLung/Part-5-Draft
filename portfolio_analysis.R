@@ -1,3 +1,57 @@
+# setwd("C:/Users/steph/Dropbox/Business University Science/Personal Portfolio/Part-5-Draft")
+library(pacman)
+
+# Shiny
+library(flexdashboard)
+library(shiny)
+library(shinyjs)
+library(shinyWidgets)
+library(shinythemes)
+library(shinyauthr)
+
+# Core
+library(tidyquant)
+library(tidyverse)
+library(timetk)
+library(tidyr)
+library(tibble)
+library(dplyr)
+library(furrr)
+library(purrr)
+library(glue)
+library(forcats)
+library(stringr)
+library(rlang)
+
+# Text
+library(tidytext)    # Tidy text mining
+library(textdata)    # Needed for AFINN
+
+# Visualizations
+library(plotly)
+library(highcharter)
+library(correlationfunnel)
+library(ggwordcloud) # Extension for wordclouds
+
+# Interactive Maps
+library(tmaptools)
+library(leaflet) 
+
+# Twitter API
+library(rtweet) 
+
+# Modeling
+library(parsnip)
+library(xgboost)
+library(glmnet)
+
+source("00_scripts/stock_analysis_functions.R")
+source("00_scripts/portfolio_analysis_functions.R")
+source("00_prior_script/wealth_index.R")
+source("00_scripts/info_card.R")
+source("00_scripts/generate_favourite_cards.R")
+source("00_scripts/geocode_for_free.R") #geocoding for locations
+
 # INPUT DATA ----
 symbols <- c("AAPL",
              "MSFT",
@@ -18,7 +72,7 @@ portfolio_price_data <- multi_asset_price_portfolio(symbols, end, start, wts_tbl
 
 # 1.1 PLOT DATA ----
 
-q <- stock_price_data %>% 
+q <- portfolio_price_data %>% 
   mutate(label_text = str_glue("Date: {date}
                                Price: {scales::dollar(adjusted)}")) %>% 
   mutate(symbol = fct_reorder(symbol, desc(adjusted))) %>% 
@@ -39,7 +93,8 @@ ggplotly(q, tooltip = "text")
 plot_portfolio_price <- function(data, ggplot = TRUE){
   
   p <- data %>% 
-    mutate(label_text = str_glue("Date: {date}
+    mutate(label_text = str_glue("Symbol: {symbol}
+                               Date: {date}
                                Price: {scales::dollar(adjusted)}")) %>% 
     mutate(symbol = fct_reorder(symbol, desc(adjusted))) %>% 
     ggplot(aes(date, adjusted, colour = symbol, group = symbol)) + 
@@ -250,6 +305,50 @@ generate_portfolio_commentary <- function(data){
   
   
 }
+
+# Adjusting User Inputs to be based on saved results 
+# ADDITIONAL: Adjust the saved percentage weights based on the saved results 
+
+user_base_tbl <- tibble(
+  user = c("user1", "user2"),
+  password = c("pass1", "pass2"), 
+  permissions = c("admin", "standard"),
+  name = c("User One", "User Two"),
+  favourites = list(c("AAL", "DAL", "UAL"), c("MA", "V", "FB")),
+  # last_symbol = c("GOOG", "NFLX")
+)
+
+tickers <- user_base_tbl %>% filter(user == "user1") %>% pull(favourites) %>% pluck(1)
+count <- tickers %>% length()
+
+# Testing to see based on the tickers saved, the default percentage allocation 
+weight_calc <- function(count){
+  
+  if (count > 3){
+    allocation <- 100
+    w_1 <- allocation / 4
+    return(w_1)
+  } else if (count > 2){ 
+    allocation <- 100
+    w_1 <- allocation / 3
+    return(w_1)
+  } else if (count > 1){
+    allocation <- 100
+    w_1 <- allocation / 2
+    return(w_1)
+  } else {100}
+}
+
+weight_calc(4)
+
+# Testing errors
+"AAPL" %>% get_symbol_from_user_input()
+NULL %>% get_symbol_from_user_input()
+
+symbols <- list(c("AAL", "DAL", "UAL"), c("MA", "V", "FB")) %>% pluck(1)
+weights <- symbols %>% length() %>% weight_calc()
+
+weights
 
 # 7.0 SAVE SCRIPTS ----
 

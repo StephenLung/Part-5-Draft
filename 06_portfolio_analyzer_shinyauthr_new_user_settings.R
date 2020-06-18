@@ -89,7 +89,7 @@ ui <- tagList(
   
   # User Login ----
   # Setup login UI using shinyauthr settings
-  # verbatimTextOutput(outputId = "creds"),
+  verbatimTextOutput(outputId = "creds"),
   shinyauthr::loginUI(
     id = "login",
     title = tagList(h2(class = "text-center", "Stock Analyzer", tags$small("in Shiny App") %>% br()), 
@@ -125,6 +125,7 @@ server <- function(input, output, session){
   # 0.2 Instantiating User Information ----
   reactive_values <- reactiveValues() # creates a list of reactive values
   
+  # Once user authenticates, the row with the credentials is picked up and setup as reactive list
   observe({
     if (credentials()$user_auth){
       
@@ -134,14 +135,22 @@ server <- function(input, output, session){
       reactive_values$user_name <- user_data_tbl$name
       reactive_values$favourites_list <- user_data_tbl$favourites %>% pluck(1)
       # reactive_values$last_symbol <- user_data_tbl$last_symbol 
+      reactive_values$user_settings <- user_data_tbl$user_settings 
   }
   })
   
+  # Mainly for verbatimTextoutput to view the underlying data
   output$creds <- renderPrint({
     list(reactive_values$permissions,
          reactive_values$user_name,
          reactive_values$favourites_list,
-         credentials())
+         reactive_values$mavg_short,
+         reactive_values$mavg_long,
+         reactive_values$start_date,
+         reactive_values$end_date,
+         credentials(),
+         credentials()$info %>% unlist()
+         )
          
   })
 
@@ -731,17 +740,17 @@ server <- function(input, output, session){
                 id = "input_settings",
                 dateInput("start_date",
                           h4("Starting Date"),
-                          today() - years(2),
+                          reactive_values$user_settings %>% pluck(1)%>% pull(start_date),
                           format = "yyyy-mm-dd"),
                 dateInput("end_date",
                           h4("End Date"),
-                          today(),
+                          reactive_values$user_settings %>% pluck(1) %>% pull(end_date),
                           format = "yyyy-mm-dd"),
                 hr(),
                 sliderInput(inputId = "mavg_short", label = "Short Moving Average", 
-                            min = 5, max = 40, value = 5),
+                            min = 5, max = 40, value = reactive_values$user_settings %>% pluck(1) %>% pull(mavg_short)),
                 sliderInput(inputId = "mavg_long", label = "Long Moving Average", 
-                            min = 20, max = 120, value = 20),
+                            min = 20, max = 120, value = reactive_values$user_settings %>% pluck(1) %>% pull(mavg_long)),
                 actionButton(inputId = "apply_and_save", label = "Apply & Save", 
                              icon = icon("save"))
                 

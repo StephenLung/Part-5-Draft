@@ -222,8 +222,6 @@ format_table <- function(symbols, w){
                                     accuracy = 0.1))
 }
 
-format_table(symbols, w)
-format_table("SP500", 1)
 
 # All seasons portfolio ----
 all_seasons_data <- multi_asset_price_portfolio(symbols, end, start, wts_tbl) %>% 

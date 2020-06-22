@@ -111,7 +111,7 @@ server <- function(input, output, session){
   #   user_settings = list(tibble(mavg_short = 20, mavg_long = 50, start_date = "2018-01-01", end_date = "2020-01-01"),
   #                        tibble(mavg_short = 30, mavg_long = 90, start_date = "2015-01-01", end_date = today()))
   # )
-  user_base_tbl <- read_rds("00_data_local/port_user_base_tbl.rds")
+  user_base_tbl <<- read_user_base()
   
   # 0.0 USER LOGIN ----
   

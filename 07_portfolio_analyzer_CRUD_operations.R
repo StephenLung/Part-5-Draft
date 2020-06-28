@@ -51,6 +51,7 @@ source("00_scripts/stock_analysis_functions.R")
 source("00_scripts/portfolio_analysis_functions.R")
 source("00_scripts/wealth_index_functions.R")
 source("00_scripts/info_card.R")
+source("00_scripts/panel_card.R")
 source("00_scripts/generate_favourite_cards.R")
 # source("00_scripts/crud_operations_local.R")
 source("00_scripts/geocode_for_free.R") #geocoding for locations
@@ -113,7 +114,7 @@ server <- function(input, output, session){
                          tibble(mavg_short = 30, mavg_long = 90, start_date = "2015-01-01", end_date = today()))
   )
   # user_base_tbl <- read_rds("00_data_local/user_base_tbl.rds")
-  
+
   # 0.0 USER LOGIN ----
   
 

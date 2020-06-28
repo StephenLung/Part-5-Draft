@@ -103,17 +103,18 @@ server <- function(input, output, session){
   
   # 0.0 READ DATA ----
   
-  user_base_tbl <- tibble(
-    user = c("user1", "user2"),
-    password = c("pass1", "pass2"),
-    permissions = c("admin", "standard"),
-    name = c("User One", "User Two"),
-    favourites = list(c("AAL", "DAL", "UAL"), c("MA", "V", "FB")),
-    # last_symbol = c("GOOG", "NFLX"),
-    user_settings = list(tibble(mavg_short = 20, mavg_long = 50, start_date = "2018-01-01", end_date = "2020-01-01"),
-                         tibble(mavg_short = 30, mavg_long = 90, start_date = "2015-01-01", end_date = today()))
-  )
-  # user_base_tbl <- read_rds("00_data_local/user_base_tbl.rds")
+  # user_base_tbl <- tibble(
+  #   user = c("user1", "user2"),
+  #   password = c("pass1", "pass2"),
+  #   permissions = c("admin", "standard"),
+  #   name = c("User One", "User Two"),
+  #   favourites = list(c("AAL", "DAL", "UAL"), c("MA", "V", "FB")),
+  #   # last_symbol = c("GOOG", "NFLX"),
+  #   user_settings = list(tibble(mavg_short = 20, mavg_long = 50, start_date = "2018-01-01", end_date = "2020-01-01"),
+  #                        tibble(mavg_short = 30, mavg_long = 90, start_date = "2015-01-01", end_date = today()))
+  # )
+  
+  read_user_base()
 
   # 0.0 USER LOGIN ----
   
@@ -227,6 +228,26 @@ server <- function(input, output, session){
                          }, ignoreNULL = FALSE)
   
   # 1.4 Apply & Save Settings ----
+  
+  observeEvent(input$apply_and_save,{
+    
+    # if apply and save is selected, we create a tibble of user settings to be added into
+    # the user_settings_tbl which replaces the column in the user_base_tbl
+    user_settings_tbl <- tibble(
+      mavg_short = input$mavg_short,
+      mavg_long = input$mavg_long,
+      start_date = input$start_date,
+      end_date = input$end_date
+    )
+    
+    
+    update_and_write_user_base(
+      user_name = credentials()$info$user,
+      column_name = "user_settings",
+      assign_input = list(user_settings_tbl) # must assign input as a list
+    )
+  })
+  
   mavg_short <- eventReactive(input$apply_and_save,{
     input$mavg_short
   }, ignoreNULL=FALSE)

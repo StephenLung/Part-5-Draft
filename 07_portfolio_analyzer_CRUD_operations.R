@@ -53,7 +53,7 @@ source("00_scripts/wealth_index_functions.R")
 source("00_scripts/info_card.R")
 source("00_scripts/panel_card.R")
 source("00_scripts/generate_favourite_cards.R")
-# source("00_scripts/crud_operations_local.R")
+source("00_scripts/crud_operations_local.R")
 source("00_scripts/geocode_for_free.R") #geocoding for locations
 
 stock_list_tbl <- get_stock_list("SP500")

@@ -49,9 +49,10 @@ library(glmnet)
 
 source("00_scripts/stock_analysis_functions.R")
 source("00_scripts/portfolio_analysis_functions.R")
-source("00_prior_script/wealth_index.R")
+source("00_scripts/wealth_index_functions.R")
 source("00_scripts/info_card.R")
 source("00_scripts/generate_favourite_cards.R")
+# source("00_scripts/crud_operations_local.R")
 source("00_scripts/geocode_for_free.R") #geocoding for locations
 
 stock_list_tbl <- get_stock_list("SP500")
@@ -59,7 +60,7 @@ current_user_favourites <- c("AAPL", "MSFT", "NFLX", "AMZN") # needed for the de
 token <- read_rds("../my_twitter_token.rds")
 
 # USER DATA ----
-current_user_favorites <- c("AAPL", "GOOG", "NFLX")
+# current_user_favorites <- c("AAPL", "GOOG", "NFLX")
 
 
 # UI ----
@@ -100,18 +101,18 @@ server <- function(input, output, session){
   
   
   # 0.0 READ DATA ----
-
-  # user_base_tbl <- tibble(
-  #   user = c("user1", "user2"),
-  #   password = c("pass1", "pass2"), 
-  #   permissions = c("admin", "standard"),
-  #   name = c("User One", "User Two"),
-  #   favourites = list(c("AAL", "DAL", "UAL"), c("MA", "V", "FB")),
-  #   # last_symbol = c("GOOG", "NFLX"),
-  #   user_settings = list(tibble(mavg_short = 20, mavg_long = 50, start_date = "2018-01-01", end_date = "2020-01-01"),
-  #                        tibble(mavg_short = 30, mavg_long = 90, start_date = "2015-01-01", end_date = today()))
-  # )
-  user_base_tbl <- read_rds("00_data_local/port_user_base_tbl.rds")
+  
+  user_base_tbl <- tibble(
+    user = c("user1", "user2"),
+    password = c("pass1", "pass2"),
+    permissions = c("admin", "standard"),
+    name = c("User One", "User Two"),
+    favourites = list(c("AAL", "DAL", "UAL"), c("MA", "V", "FB")),
+    # last_symbol = c("GOOG", "NFLX"),
+    user_settings = list(tibble(mavg_short = 20, mavg_long = 50, start_date = "2018-01-01", end_date = "2020-01-01"),
+                         tibble(mavg_short = 30, mavg_long = 90, start_date = "2015-01-01", end_date = today()))
+  )
+  # user_base_tbl <- read_rds("00_data_local/user_base_tbl.rds")
   
   # 0.0 USER LOGIN ----
   
@@ -186,7 +187,7 @@ server <- function(input, output, session){
   })
 
   
-  # 1.3 Stock symbols  ----
+  # 1.3 Stock %>%  ----
   # Warning user input requires parsing to the ticker symbol
   symbols <- eventReactive(input$submit,
                            valueExpr = {
@@ -264,7 +265,7 @@ server <- function(input, output, session){
   # 2.3 Render Favourite Cards ----
   output$favourite_cards <- renderUI({
     
-    if(length(reactive_values$favourites_list) >0){
+    if(length(reactive_values$favourites_list) > 0){
       generate_favourite_cards(
         favourites_ticker  = reactive_values$favourites_list,
         start              = input$start_date,

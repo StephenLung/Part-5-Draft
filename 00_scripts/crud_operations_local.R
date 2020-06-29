@@ -9,4 +9,3 @@ function(user_name, column_name, assign_input){
   write_rds(user_base_tbl, path = "00_data_local/user_base_tbl.rds")
 }
 
-read_user_base()

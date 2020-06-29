@@ -201,7 +201,15 @@ generate_portfolio_commentary <-
       mutate(flag = mavg_short > mavg_long) %>%
       pull(flag)
 
-    if(warning_flag){
+    # if(warning_flag){
+    #   str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is above the {long_window}-day moving average, this indicates a positive trend")
+    # } else {
+    #   str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is below the {long_window}-day moving average, this indicates a positive trend")
+    # }
+    
+    if(is.na(warning_flag)){
+      "The moving average window is out of scope, please reduce the moving average parameter"
+    } else if(warning_flag){
       str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is above the {long_window}-day moving average, this indicates a positive trend")
     } else {
       str_glue("In reviewing the Portfolio, since the {short_window}-day moving average is below the {long_window}-day moving average, this indicates a positive trend")

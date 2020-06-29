@@ -82,7 +82,7 @@ ui <- tagList(
   
   # User Login ----
   # Setup login UI using shinyauthr settings
-  verbatimTextOutput(outputId = "creds"),
+  # verbatimTextOutput(outputId = "creds"),
   shinyauthr::loginUI(
     id = "login",
     title = tagList(h2(class = "text-center", "Stock Analyzer", tags$small("in Shiny App") %>% br()), 
@@ -101,7 +101,10 @@ ui <- tagList(
 server <- function(input, output, session){
   
   
-  # 0.0 READ DATA ----
+  # 0.0 READ USER BASE & AUTHENTICATE USER LOGIN ----
+
+  # 0.1 Return user_base_tbl - To Global Environment----
+  
   
   # user_base_tbl <- tibble(
   #   user = c("user1", "user2"),
@@ -115,13 +118,8 @@ server <- function(input, output, session){
   # )
   
   read_user_base()
-
-  # 0.0 USER LOGIN ----
   
-
-  
-  
-  # 0.1 Credentials ----
+  # 0.2 Credentials ----
   credentials <- callModule(module = shinyauthr::login,
              id                    = "login", # connec to the UI id
              data                  = user_base_tbl,
@@ -135,7 +133,7 @@ server <- function(input, output, session){
     active                         = reactive(credentials()$user_auth) # this will be toggled as off when user logs out
   )
 
-  # 0.2 Instantiating User Information ----
+  # 0.3 Instantiating User Information ----
   reactive_values <- reactiveValues() # creates a list of reactive values
   
   # Once user authenticates, the row with the credentials is picked up and setup as reactive list
@@ -240,7 +238,7 @@ server <- function(input, output, session){
       end_date = input$end_date
     )
     
-    
+    # pulls the earlier assigned user_settings_tbl into the user_base_tbl 
     update_and_write_user_base(
       user_name = credentials()$info$user,
       column_name = "user_settings",
@@ -267,7 +265,7 @@ server <- function(input, output, session){
     selected_tab
   }, ignoreNULL=FALSE)
   
-  # 2.0 FAVOURITES ----
+  # 2.0 FAVOURITES CARDS ----
   
   # 2.1 Reactive Values - User Favourites ----
 
@@ -282,6 +280,13 @@ server <- function(input, output, session){
                                          input$stock_4 %>% get_symbol_from_user_input()) %>% 
       unique()
     
+    # When a new ticker is favourite, it is added to the user_base_tbl
+    update_and_write_user_base(
+      user_name = credentials()$info$user,
+      column_name = "favourites",
+      assign_input = list(reactive_values$favourites_list)
+    )
+
   })
   
   # 2.3 Render Favourite Cards ----
@@ -334,11 +339,19 @@ server <- function(input, output, session){
     # reactive_values$favourites_list <- reactive_values$favourites_list %>%
     #   .[reactive_values$favourites_list != input$drop_list]
     
+    # Set the vector as a dataframe before filtering out the selected remove 
     reactive_values$favourites_list <- reactive_values$favourites_list %>%
       data.frame(ticker = .) %>%
       filter(ticker != input$drop_list) %>%
       pull(ticker) %>%
       as.character()
+    
+    # When single remove is selected, it will update the favourites list
+    update_and_write_user_base(
+      user_name = credentials()$info$user,
+      column_name = "favourites",
+      assign_input = list(reactive_values$favourites_list)
+    )
     
     
     updateSelectInput(session = session,
@@ -349,10 +362,21 @@ server <- function(input, output, session){
   
   # 2.4.2 Clear All ----
   observeEvent(eventExpr = input$remove_all_favourite,{
+    
+    # When remove all is selected, it will set the favourites list as NULL
+    # Will update the selectinput screen as a blank list
     reactive_values$favourites_list <- NULL
     updateSelectInput(session = session,
                       inputId = "drop_list",
                       choices = "") # Reflects the new empty list
+    
+    # When remove all is selected, it will update the favourites list
+    update_and_write_user_base(
+      user_name = credentials()$info$user,
+      column_name = "favourites",
+      assign_input = list(reactive_values$favourites_list)
+    )
+    
   })
   
   # 2.5 Show/Hide Favourites ----

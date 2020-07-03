@@ -1,0 +1,13 @@
+# YAML is the format that the header with instructions for the rmarkdown file
+default:
+  host:   "cluster0-y3pme.mongodb.net"
+  username: "stephenlung"
+  password: "kathleen123"
+
+
+
+
+production:
+  host:   "cluster0-y3pme.mongodb.net"
+  username: "stephenlung"
+  password: "kathleen123"

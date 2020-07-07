@@ -126,11 +126,19 @@ mongo_connection$find() %>% as_tibble() %>% tail()
 
 # 4.3 Remove a record
 
+# Removing a record and then view the updated tibble
+mongo_connection$remove(query = '{"model": "Ford F250"}')
+mongo_connection$find() %>% as_tibble() %>% tail()
 
 # 4.4 Remove entire table (be careful)
 
+mongo_connection$drop()
+mongo_connection$find() %>% as_tibble() %>% tail()
 
 
+# 4.5 Disconnecting from Database
+
+mongo_connection$disconnect()
 
 # 5.0 NESTED STRUCTURES ----
 
@@ -147,21 +155,29 @@ user_base_tbl <- tibble(
     password       = c("pass1", "pass2"), 
     permissions    = c("admin", "standard"),
     name           = c("User One", "User Two"),
-    favorites      = list(c("AAPL", "GOOG", "NFLX"), c("MA", "V", "FB")),
-    last_symbol    = c("GOOG", "NFLX"),
-    user_settings  = list(tibble(mavg_short = 20, mavg_long = 50, time_window = 180), 
-                          tibble(mavg_short = 30, mavg_long = 90, time_window = 365)),
+    favourites      = list(c("AAPL", "GOOG", "NFLX"), c("MA", "V", "FB")),
+    # last_symbol    = c("GOOG", "NFLX"),
+    # convert to datetime format to fit POSIXt with either as_datetime or as_POSIXtc 
+    user_settings = list(tibble(mavg_short = 20, mavg_long = 50, start_date = as_datetime("2018-01-01"), end_date = as_datetime("2020-01-01")),
+                         tibble(mavg_short = 30, mavg_long = 90, start_date = as_datetime("2015-01-01"), end_date = as_datetime(today()))),
     account_created = c(ymd_hms("2019-05-12 12:31:09"), ymd_hms("2019-06-04 06:18:02"))
 ) 
 
 # Converting to JSON
+user_base_tbl %>% 
+    toJSON() %>% 
+    prettify() 
+
+user_base_tbl %>% 
+    toJSON(POSIXt = "mongo") %>% # converting numeric value to a date in mongodb
+    prettify() 
 
 
 # Adding nested structure to mongodb
-
+mongo_connection$insert(user_base_tbl)
 
 # Retrieve - Preserves nested structure and format
-
+mongo_connection$find() %>% as_tibble()
 
 
 # 6.0 STOCK ANALYZER APP - CRUD WORKFLOW -----
@@ -169,11 +185,15 @@ user_base_tbl <- tibble(
 # Create new collection
 mongo_connection <- mongo_connect(
     database   = "stock_analyzer",
-    collection = "user_base"
+    collection = "user_base_test"
 )
 
-# 6.1 Add User Data ----
+mongo_connection$drop()
+mongo_connection$count()
+mongo_connection$find()
 
+# 6.1 Add User Data ----
+mongo_connection$insert(user_base_tbl)
 
 
 # 6.2 Get User Data ----
@@ -181,30 +201,107 @@ mongo_connection <- mongo_connect(
 #     user_base_tbl <<- read_rds(path = "00_data_local/user_base_tbl.rds")
 # }
 
+mongo_read_user_base <- function(database = "stock_analyzer", collection = "user_base_test"){
+    
+    # establishes the connection to the database 
+    mongo_connection <- mongo_connect(database = database,
+                                      collection = collection,
+                                      host = config$host,
+                                      username = config$username,
+                                      password = config$password)
+    
+    user_base_tbl <<- mongo_connection$find() %>% as_tibble()
+    
+    mongo_connection$disconnect()
+    
+}
+
+rm(user_base_tbl)
+
+mongo_read_user_base(database = "stock_analyzer",
+                     collection = "user_base")
 
 
 # 6.3 What shinyauthr does... ----
 
+user_1_tbl <- user_base_tbl %>% 
+    filter(
+        user == "user1",
+        password == "pass1"
+    )
 
+
+user_1_tbl %>% 
+    pull(favourites)
+
+pluck(user_1_tbl, "favourites", 1) <- c("AAPL", "GOOG", "NFLX", "ADBE")
 
 # 6.5 Update Mongo ----
 
-# update_and_write_user_base <- function(user_name, column_name, assign_input) {
-#     user_base_tbl[user_base_tbl$user == user_name, ][[column_name]] <<- assign_input
-#     write_rds(user_base_tbl, path = "00_data_local/user_base_tbl.rds")
-# }
+user_name <- "user2"
+# mongo_connection$find(query = query_string)
+
+mongo_update_and_write_user_base <- function(user_name, column_name, assign_input,
+                                           database = "stock_analyzer", 
+                                           collection = "user_base_test") {
+    user_base_tbl[user_base_tbl$user == user_name, ][[column_name]] <<- assign_input
+    
+    # Setting up the connection by stating the database, collection to update and
+    # host, user and pass from the yaml config file
+    mongo_connection <- mongo_connect(database = database,
+                                      collection = collection,
+                                      host = config$host,
+                                      username = config$username,
+                                      password = config$password)
+    
+    # Query String
+    # sets up the string to search in the mongo query
+    query_string <- str_c('{"user": "', user_name, '"}')
+    
+    # Update String
+    # Sets up the string in JSON to update with in mongo update
+    update_string <- user_base_tbl %>% 
+        filter(user == user_name) %>% 
+        select(-user,-password, -permissions) %>%
+        toJSON(POSIXt = "mongo") %>% 
+        str_remove_all(pattern = "^\\[|\\]$")  #regex to remove the '[]' brackets
+    # ^ matches start of the string, $ matches end of the string, \\ indicates special character 
+        
+    # Updates the table with the new entry 
+    mongo_connection$update(query = query_string,
+                            update = str_c('{"$set": ', update_string,' }') 
+                            )
+    
+    # Disconnect
+    mongo_connection$disconnect()
+}
 
 
 
 # Before update
+mongo_connection$find()
 
+user_base_tbl %>% 
+    filter(user == "user1") %>% 
+    pull(user_settings)
 
 # After update
+mongo_update_and_write_user_base(
+    user_name = "user1",
+    column_name = "user_settings",
+    assign_input = list(tibble(
+        mavg_short = 15,
+        mavg_long = 75,
+        start_date = as_datetime("2018-01-01"),
+        end_date = as_datetime("2020-01-01")
+    ))
+)
 
+mongo_connection$find()
 
 # 7.0 Save Functions ----
 
-dump(c("mongo_connect", "mongo_get_user_base", "mongo_update_user_record"), 
+dump(c("mongo_connect", "mongo_read_user_base", "mongo_update_and_write_user_base"), 
      file = "00_scripts/crud_operations_mongodb.R", append = FALSE)
 
 

@@ -10,13 +10,16 @@ function(collection, database,
     )  
 }
 mongo_read_user_base <-
-function(database = "stock_analyzer", collection = "user_base_test"){
+function(database = "portfolio_analyzer", collection = "user_base_test",
+         username = config$username, 
+         password = config$password, 
+         host = config$host){
     
     mongo_connection <- mongo_connect(database = database,
                                       collection = collection,
-                                      host = config$host,
-                                      username = config$username,
-                                      password = config$password)
+                                      host = host,
+                                      username = username,
+                                      password = password)
     
     user_base_tbl <<- mongo_connection$find() %>% as_tibble()
     
@@ -25,17 +28,21 @@ function(database = "stock_analyzer", collection = "user_base_test"){
 }
 mongo_update_and_write_user_base <-
 function(user_name, column_name, assign_input,
-                                           database = "stock_analyzer", 
-                                           collection = "user_base_test") {
+         database = "portfolio_analyzer", 
+         collection = "user_base_test",
+         username = config$username, 
+         password = config$password, 
+         host = config$host) {
+    
     user_base_tbl[user_base_tbl$user == user_name, ][[column_name]] <<- assign_input
     
     # Setting up the connection by stating the database, collection to update and
     # host, user and pass from the yaml config file
     mongo_connection <- mongo_connect(database = database,
                                       collection = collection,
-                                      host = config$host,
-                                      username = config$username,
-                                      password = config$password)
+                                      host = host,
+                                      username = username,
+                                      password = password)
     
     # Query String
     # sets up the string to search in the mongo query

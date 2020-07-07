@@ -143,7 +143,7 @@ mongo_connection$disconnect()
 # 5.0 NESTED STRUCTURES ----
 
 mongo_connection <- mongo_connect(
-    database   = "stock_analyzer",
+    database   = "portfolio_analyzer",
     collection = "user_base"
 )
 
@@ -184,7 +184,7 @@ mongo_connection$find() %>% as_tibble()
 
 # Create new collection
 mongo_connection <- mongo_connect(
-    database   = "stock_analyzer",
+    database   = "portfolio_analyzer",
     collection = "user_base_test"
 )
 
@@ -201,7 +201,7 @@ mongo_connection$insert(user_base_tbl)
 #     user_base_tbl <<- read_rds(path = "00_data_local/user_base_tbl.rds")
 # }
 
-mongo_read_user_base <- function(database = "stock_analyzer", collection = "user_base_test"){
+mongo_read_user_base <- function(database = "portfolio_analyzer", collection = "user_base_test"){
     
     # establishes the connection to the database 
     mongo_connection <- mongo_connect(database = database,
@@ -218,7 +218,7 @@ mongo_read_user_base <- function(database = "stock_analyzer", collection = "user
 
 rm(user_base_tbl)
 
-mongo_read_user_base(database = "stock_analyzer",
+mongo_read_user_base(database = "portfolio_analyzer",
                      collection = "user_base")
 
 
@@ -242,7 +242,7 @@ user_name <- "user2"
 # mongo_connection$find(query = query_string)
 
 mongo_update_and_write_user_base <- function(user_name, column_name, assign_input,
-                                           database = "stock_analyzer", 
+                                           database = "portfolio_analyzer", 
                                            collection = "user_base_test") {
     user_base_tbl[user_base_tbl$user == user_name, ][[column_name]] <<- assign_input
     

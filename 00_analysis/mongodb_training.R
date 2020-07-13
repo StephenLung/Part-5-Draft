@@ -151,14 +151,14 @@ mongo_connection$drop()
 mongo_connection$count()
 
 user_base_tbl <- tibble(
-    user           = c("user1", "user2"),
-    password       = c("pass1", "pass2"), 
-    permissions    = c("admin", "standard"),
-    name           = c("User One", "User Two"),
+    user            = c("user1", "user2"),
+    password        = c("pass1", "pass2"), 
+    permissions     = c("admin", "standard"),
+    name            = c("User One", "User Two"),
     favourites      = list(c("AAPL", "GOOG", "NFLX"), c("MA", "V", "FB")),
     # last_symbol    = c("GOOG", "NFLX"),
     # convert to datetime format to fit POSIXt with either as_datetime or as_POSIXtc 
-    user_settings = list(tibble(mavg_short = 20, mavg_long = 50, start_date = as_datetime("2018-01-01"), end_date = as_datetime("2020-01-01")),
+    user_settings   = list(tibble(mavg_short = 20, mavg_long = 50, start_date = as_datetime("2018-01-01"), end_date = as_datetime("2020-01-01")),
                          tibble(mavg_short = 30, mavg_long = 90, start_date = as_datetime("2015-01-01"), end_date = as_datetime(today()))),
     account_created = c(ymd_hms("2019-05-12 12:31:09"), ymd_hms("2019-06-04 06:18:02"))
 ) 
@@ -305,3 +305,41 @@ dump(c("mongo_connect", "mongo_read_user_base", "mongo_update_and_write_user_bas
      file = "00_scripts/crud_operations_mongodb.R", append = FALSE)
 
 
+# 8.0 Addition of stocks in user_base_tbl ----
+
+# Created new user_base_tbl with the portfolio tickers
+user_base_tbl <- tibble(
+    user            = c("user1", "user2"),
+    password        = c("pass1", "pass2"), 
+    permissions     = c("admin", "standard"),
+    name            = c("User One", "User Two"),
+    favourites      = list(c("FB", "MSFT", "NFLX", "AMZN"), c("MA", "V", "AXP", "COF")),
+    portfolio       = list(c("FB", "MSFT", "NFLX", "AMZN"), c("MA", "V", "AXP", "COF")),
+    # last_symbol    = c("GOOG", "NFLX"),
+    # convert to datetime format to fit POSIXt with either as_datetime or as_POSIXtc 
+    user_settings   = list(tibble(mavg_short = 20, mavg_long = 50, start_date = as_datetime("2018-01-01"), end_date = as_datetime("2020-01-01")),
+                           tibble(mavg_short = 30, mavg_long = 90, start_date = as_datetime("2015-01-01"), end_date = as_datetime(today()))),
+    account_created = c(ymd_hms("2019-05-12 12:31:09"), ymd_hms("2019-06-04 06:18:02"))
+) 
+
+# 8.1 STOCK ANALYZER APP - CRUD WORKFLOW -----
+# Create new connection with a new database
+mongo_connection <- mongo_connect(
+    database   = "portfolio_analyzer_2",
+    collection = "user_base_test"
+)
+
+# 8.2 Add User Data ----
+# Adding tibble into the database
+# mongo_connection$drop()
+mongo_connection$insert(user_base_tbl)
+
+mongo_connection$disconnect()
+
+# Replacing existing database with original user_base_tbl
+
+
+# Testing of user_base_tbl and pulling the portfolio list
+user_base_tbl %>% 
+    filter(user == "user1") %>% 
+    select(portfolio) %>% unlist() %>% .[4]

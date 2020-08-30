@@ -73,7 +73,7 @@ collection <-  "user_base_test"
 
 stock_list_tbl <- get_stock_list("SP500")
 current_user_favourites <- c("AAPL", "MSFT", "NFLX", "AMZN") # needed for the default setting
-token <- read_rds("../my_twitter_token.rds")
+token <- read_rds("my_twitter_token.rds")
 
 # USER DATA ----
 # current_user_favorites <- c("AAPL", "GOOG", "NFLX")
@@ -97,7 +97,7 @@ ui <- tagList(
   
   # User Login ----
   # Setup login UI using shinyauthr settings
-  verbatimTextOutput(outputId = "creds"),
+  # verbatimTextOutput(outputId = "creds"),
   shinyauthr::loginUI(
     id = "login",
     title = tagList(h2(class = "text-center", "Stock Analyzer", tags$small("in Shiny App") %>% br()), 
@@ -244,15 +244,15 @@ server <- function(input, output, session){
                            input$start_date
                          }, ignoreNULL = FALSE)
   
-  observeEvent(input$submit,{ # 07.08.2020
-    
+  observeEvent(input$submit,{ # 07.08.2020 
+
     # if submit is selected, we update the reactive values portfolio list
-    # which replaces the column portfolio 
+    # which replaces the column portfolio
     reactive_values$portfolio_list <- c(input$stock_1 %>% get_symbol_from_user_input(),
                                         input$stock_2 %>% get_symbol_from_user_input(),
                                         input$stock_3 %>% get_symbol_from_user_input(),
                                         input$stock_4 %>% get_symbol_from_user_input())
-    
+
     # When submit is selected, portfolio list is updated
     mongo_update_and_write_user_base(
       user_name    = credentials()$info$user,
@@ -265,6 +265,10 @@ server <- function(input, output, session){
       password     = config$password
     )
     
+    # problems returning to home page 08.28.2020
+    # solution: to manually direct to correct page
+    updateNavbarPage(session, "inNavset", selected = "page_1")
+
   })
   
   
@@ -315,6 +319,10 @@ server <- function(input, output, session){
       username     = config$username,
       password     = config$password
     )
+    
+    # problems returning to home page 08.28.2020
+    # solution: to manually direct to correct page
+    updateNavbarPage(session, "inNavset", selected = "page_1")
 
   })
   

@@ -76,8 +76,17 @@ current_user_favourites <- c("AAPL", "MSFT", "NFLX", "AMZN") # needed for the de
 token <- read_rds("../my_twitter_token.rds")
 
 # USER DATA ----
-# current_user_favorites <- c("AAPL", "GOOG", "NFLX")
-
+current_user_favorites <- c("AAPL", "GOOG", "NFLX")
+user_base_tbl <- tibble(
+  user = c("user1", "user2"),
+  password = c("pass1", "pass2"), 
+  permissions = c("admin", "standard"),
+  name = c("User One", "User Two"),
+  favourites = list(c("AAL", "DAL", "UAL"), c("MA", "V", "FB")),
+  # last_symbol = c("GOOG", "NFLX"),
+  user_settings = list(tibble(mavg_short = 20, mavg_long = 50, start_date = "2018-01-01", end_date = "2020-01-01"),
+                       tibble(mavg_short = 30, mavg_long = 90, start_date = "2015-01-01", end_date = today()))
+)
 
 # UI ----
 ui <- tagList(
@@ -115,28 +124,8 @@ ui <- tagList(
 # SERVER ----
 server <- function(input, output, session){
   
-  
-  # 0.0 READ USER BASE & AUTHENTICATE USER LOGIN ----
-
-  # 0.1 Return user_base_tbl - To Global Environment----
-  mongo_read_user_base(database = database,
-                       collection = collection,
-                       host = config$host,
-                       username = config$username,
-                       password = config$password)
-  
-  # user_base_tbl <- tibble(
-  #   user = c("user1", "user2"),
-  #   password = c("pass1", "pass2"),
-  #   permissions = c("admin", "standard"),
-  #   name = c("User One", "User Two"),
-  #   favourites = list(c("AAL", "DAL", "UAL"), c("MA", "V", "FB")),
-  #   # last_symbol = c("GOOG", "NFLX"),
-  #   user_settings = list(tibble(mavg_short = 20, mavg_long = 50, start_date = "2018-01-01", end_date = "2020-01-01"),
-  #                        tibble(mavg_short = 30, mavg_long = 90, start_date = "2015-01-01", end_date = today()))
-  # )
-  
-  # 0.2 Credentials ----
+  # 0.0 USER LOGIN ----
+  # 0.1 Credentials ----
   credentials <- callModule(module = shinyauthr::login,
              id                    = "login", # connec to the UI id
              data                  = user_base_tbl,
@@ -150,7 +139,7 @@ server <- function(input, output, session){
     active                         = reactive(credentials()$user_auth) # this will be toggled as off when user logs out
   )
 
-  # 0.3 Instantiating User Information ----
+  # 0.2 Instantiating User Information ----
   reactive_values <- reactiveValues() # creates a list of reactive values
   
   # Once user authenticates, the row with the credentials is picked up and setup as reactive list
@@ -162,7 +151,6 @@ server <- function(input, output, session){
       reactive_values$permissions <- user_data_tbl$permissions
       reactive_values$user_name <- user_data_tbl$name
       reactive_values$favourites_list <- user_data_tbl$favourites %>% pluck(1)
-      reactive_values$portfolio_list <- user_data_tbl$portfolio %>% pluck(1) # 07.08.2020 
       # reactive_values$last_symbol <- user_data_tbl$last_symbol 
       reactive_values$user_settings <- user_data_tbl$user_settings 
   }
@@ -173,7 +161,6 @@ server <- function(input, output, session){
     list(reactive_values$permissions,
          reactive_values$user_name,
          reactive_values$favourites_list,
-         reactive_values$portfolio_list, # 07.08.2020
          reactive_values$mavg_short,
          reactive_values$mavg_long,
          reactive_values$start_date,
@@ -206,8 +193,8 @@ server <- function(input, output, session){
   })
 
   
-  # 1.3 Stock Symbol ----
-  # Warning: user input requires parsing to the ticker symbol
+  # 1.3 Stock symbols  ----
+  # Warning user input requires parsing to the ticker symbol
   symbols <- eventReactive(input$submit,
                            valueExpr = {
                              c(input$stock_1 %>% get_symbol_from_user_input(),
@@ -244,80 +231,7 @@ server <- function(input, output, session){
                            input$start_date
                          }, ignoreNULL = FALSE)
   
-  observeEvent(input$submit,{ # 07.08.2020
-    
-    # if submit is selected, we update the reactive values portfolio list
-    # which replaces the column portfolio 
-    reactive_values$portfolio_list <- c(input$stock_1 %>% get_symbol_from_user_input(),
-                                        input$stock_2 %>% get_symbol_from_user_input(),
-                                        input$stock_3 %>% get_symbol_from_user_input(),
-                                        input$stock_4 %>% get_symbol_from_user_input())
-    
-    # When submit is selected, portfolio list is updated
-    mongo_update_and_write_user_base(
-      user_name    = credentials()$info$user,
-      column_name  = "portfolio",
-      assign_input = list(reactive_values$portfolio_list),
-      database     = database,
-      collection   = collection,
-      host         = config$host,
-      username     = config$username,
-      password     = config$password
-    )
-    
-  })
-  
-  
-  
-  
   # 1.4 Apply & Save Settings ----
-  
-  observeEvent(input$apply_and_save,{
-    
-    # if apply and save is selected, we create a tibble of user settings to be added into
-    # the user_settings_tbl which replaces the column in the user_base_tbl
-    user_settings_tbl <- tibble(
-      mavg_short = input$mavg_short,
-      mavg_long  = input$mavg_long,
-      start_date = input$start_date,
-      end_date   = input$end_date
-    )
-    
-    # pulls the earlier assigned user_settings_tbl into the user_base_tbl 
-    mongo_update_and_write_user_base(
-      user_name    = credentials()$info$user,
-      column_name  = "user_settings",
-      assign_input = list(user_settings_tbl), # must assign input as a list
-      database     = database,
-      collection   = collection,
-      host         = config$host,
-      username     = config$username,
-      password     = config$password
-    )
-    
-    
-    # 07.08.2020
-    # if submit is selected, we update the reactive values portfolio list
-    # which replaces the column portfolio 
-    reactive_values$portfolio_list <- c(input$stock_1 %>% get_symbol_from_user_input(),
-                                        input$stock_2 %>% get_symbol_from_user_input(),
-                                        input$stock_3 %>% get_symbol_from_user_input(),
-                                        input$stock_4 %>% get_symbol_from_user_input())
-
-    # When submit is selected, portfolio list is updated
-    mongo_update_and_write_user_base(
-      user_name    = credentials()$info$user,
-      column_name  = "portfolio",
-      assign_input = list(reactive_values$portfolio_list),
-      database     = database,
-      collection   = collection,
-      host         = config$host,
-      username     = config$username,
-      password     = config$password
-    )
-
-  })
-  
   mavg_short <- eventReactive(input$apply_and_save,{
     input$mavg_short
   }, ignoreNULL=FALSE)
@@ -337,7 +251,7 @@ server <- function(input, output, session){
     selected_tab
   }, ignoreNULL=FALSE)
   
-  # 2.0 FAVOURITES CARDS ----
+  # 2.0 FAVOURITES ----
   
   # 2.1 Reactive Values - User Favourites ----
 
@@ -352,24 +266,12 @@ server <- function(input, output, session){
                                          input$stock_4 %>% get_symbol_from_user_input()) %>% 
       unique()
     
-    # When a new ticker is favourite, it is added to the user_base_tbl
-    mongo_update_and_write_user_base(
-      user_name    = credentials()$info$user,
-      column_name  = "favourites",
-      assign_input = list(reactive_values$favourites_list),
-      database     = database,
-      collection   = collection,
-      host         = config$host,
-      username     = config$username,
-      password     = config$password
-    )
-
   })
   
   # 2.3 Render Favourite Cards ----
   output$favourite_cards <- renderUI({
     
-    if(length(reactive_values$favourites_list) > 0){
+    if(length(reactive_values$favourites_list) >0){
       generate_favourite_cards(
         favourites_ticker  = reactive_values$favourites_list,
         start              = input$start_date,
@@ -416,24 +318,11 @@ server <- function(input, output, session){
     # reactive_values$favourites_list <- reactive_values$favourites_list %>%
     #   .[reactive_values$favourites_list != input$drop_list]
     
-    # Set the vector as a dataframe before filtering out the selected remove 
     reactive_values$favourites_list <- reactive_values$favourites_list %>%
       data.frame(ticker = .) %>%
       filter(ticker != input$drop_list) %>%
       pull(ticker) %>%
       as.character()
-    
-    # When single remove is selected, it will update the favourites list
-    mongo_update_and_write_user_base(
-      user_name    = credentials()$info$user,
-      column_name  = "favourites",
-      assign_input = list(reactive_values$favourites_list),
-      database     = database,
-      collection   = collection,
-      host         = config$host,
-      username     = config$username,
-      password     = config$password
-    )
     
     
     updateSelectInput(session = session,
@@ -444,26 +333,10 @@ server <- function(input, output, session){
   
   # 2.4.2 Clear All ----
   observeEvent(eventExpr = input$remove_all_favourite,{
-    
-    # When remove all is selected, it will set the favourites list as NULL
-    # Will update the selectinput screen as a blank list
     reactive_values$favourites_list <- NULL
     updateSelectInput(session = session,
                       inputId = "drop_list",
                       choices = "") # Reflects the new empty list
-    
-    # When remove all is selected, it will update the favourites list
-    mongo_update_and_write_user_base(
-      user_name    = credentials()$info$user,
-      column_name  = "favourites",
-      assign_input = list(reactive_values$favourites_list),
-      database     = database,
-      collection   = collection,
-      host         = config$host,
-      username     = config$username,
-      password     = config$password
-    )
-    
   })
   
   # 2.5 Show/Hide Favourites ----
@@ -631,12 +504,6 @@ server <- function(input, output, session){
       generate_portfolio_commentary()
   )
   
-  # 08.03.2020
-  output$portfolio_commentary_tbl <- renderTable(
-    portfolio_data_mavg_tbl() %>%
-      tail()
-  )
-  
   # 5.0 RENDER WEBSITE ----
   
   output$website <- renderUI({
@@ -798,8 +665,7 @@ server <- function(input, output, session){
                           label = h5("Stock 1"),
                           choices = stock_list_tbl$label,
                           multiple = FALSE,
-                          selected = stock_list_tbl %>% filter(label %>% str_detect(reactive_values$portfolio_list %>% unlist() %>% .[1])) %>% pull(label), #07.08.2020
-                          # selected = stock_list_tbl %>% filter(label %>% str_detect("AAPL")) %>% pull(label),
+                          selected = stock_list_tbl %>% filter(label %>% str_detect("AAPL")) %>% pull(label),
                           # filter(label %>% str_detect(pattern = paste0(reactive_values$last_symbol, ","))) #for GOOG and GOOGL issue
                           options = pickerOptions(
                             actionsBox = FALSE,
@@ -810,8 +676,7 @@ server <- function(input, output, session){
                           label = h5("Stock 2"),
                           choices = stock_list_tbl$label,
                           multiple = FALSE,
-                          selected = stock_list_tbl %>% filter(label %>% str_detect(reactive_values$portfolio_list %>% unlist() %>% .[2])) %>% pull(label), #07.08.2020
-                          # selected = stock_list_tbl %>% filter(label %>% str_detect("MSFT")) %>% pull(label),
+                          selected = stock_list_tbl %>% filter(label %>% str_detect("MSFT")) %>% pull(label),
                           options = pickerOptions(
                             actionsBox = FALSE,
                             liveSearch = TRUE,
@@ -821,8 +686,7 @@ server <- function(input, output, session){
                           label = h5("Stock 3"),
                           choices = stock_list_tbl$label,
                           multiple = FALSE,
-                          selected = stock_list_tbl %>% filter(label %>% str_detect(reactive_values$portfolio_list %>% unlist() %>% .[3])) %>% pull(label), #07.08.2020
-                          # selected = stock_list_tbl %>% filter(label %>% str_detect("NFLX")) %>% pull(label),
+                          selected = stock_list_tbl %>% filter(label %>% str_detect("NFLX")) %>% pull(label),
                           options = pickerOptions(
                             actionsBox = FALSE,
                             liveSearch = TRUE,
@@ -832,8 +696,7 @@ server <- function(input, output, session){
                           label = h5("Stock 4"),
                           choices = stock_list_tbl$label,
                           multiple = FALSE,
-                          selected = stock_list_tbl %>% filter(label %>% str_detect(reactive_values$portfolio_list %>% unlist() %>% .[4])) %>% pull(label), #07.08.2020
-                          # selected = stock_list_tbl %>% filter(label %>% str_detect("AMZN")) %>% pull(label),
+                          selected = stock_list_tbl %>% filter(label %>% str_detect("AMZN")) %>% pull(label),
                           options = pickerOptions(
                             actionsBox = FALSE,
                             liveSearch = TRUE,
@@ -937,8 +800,7 @@ server <- function(input, output, session){
             h4("Analyst Commentary")),
           div(
             class = "panel-body",
-            textOutput(outputId = "portfolio_commentary"),
-            tableOutput(outputId = "portfolio_commentary_tbl")
+            textOutput(outputId = "portfolio_commentary") 
             #error if duration of months is less than mavg_long value
             
           )
